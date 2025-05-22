@@ -3,8 +3,9 @@
 ## Архитектура проекта v1.0
 
 ```
-backend/
+JIRA-analyzer/
 ├── JIRA-connector/
+│   ├── proto/
 │   ├── cmd/
 │   │   └── service/
 │   │       └── main.go         # Точка входа
@@ -14,16 +15,15 @@ backend/
 │   │   ├── models/
 │   │   │   ├── dto/
 │   │   │   └── models.go       
-│   │   ├── service/            # Бизнес-логика
+│   │   ├── service/            # Бизнес логика
+│   │   │   ├── service.go
 │   │   │   └── connector.go
 │   │   ├── repository/
 │   │   │   └── repository.go   # TODO
 │   │   └── transport/
 │   │       ├── http/
 │   │       │   ├── handlers/
-│   │       │   ├── middleware/
-│   │       │   │   └── logging.go
-│   │       │   ├── server.go   # maybe ?
+│   │       │   ├── server.go   
 │   │       └───└── router.go
 │   ├── pkg/
 │   │   ├── logger/
@@ -32,7 +32,10 @@ backend/
 │   │       └── postgres/
 │   │           └── postgres.go
 │   └── go.mod
-├── frontend/                   # maybe
+├── backend/
+├── database/  
+├── frontend/  
+├── docker-compose.yml                    
 └── README.md
 
 ```
