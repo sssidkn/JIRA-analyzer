@@ -1,0 +1,95 @@
+syntax = "proto3";
+
+package api;
+
+option go_package = "pkg/api/connector";
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+
+service JiraConnector {
+  rpc UpdateProject (UpdateProjectRequest) returns (UpdateProjectResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/connector/updateProject"
+    };
+  }
+
+  rpc GetProjects (GetProjectsRequest) returns (GetProjectsResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/connector/projects"
+    };
+  }
+}
+
+message UpdateProjectRequest {
+  string project_key = 1;
+}
+
+message UpdateProjectResponse {
+  JiraProject project = 1;
+  bool success = 2;
+}
+
+message GetProjectsRequest {
+  // Тут пока хз, то ли список ключей то ли чего
+  repeated string project_keys = 1;
+  int32 page = 2;                   // pagination?
+  int32 page_size = 3;
+}
+
+message GetProjectsResponse {
+  repeated JiraProject projects = 1;
+  PageInfo page_info = 2;
+}
+
+message PageInfo {
+  int32 page_count = 1;
+  int32 current_page = 2;
+  int32 projects_count = 3;
+}
+
+message JiraProject {
+  string id = 1;
+  string key = 2;
+  string name = 3;
+  string description = 4;
+  bool archived = 5;
+  string project_type = 6;
+  string avatar_url = 7;
+  int32 issue_count = 8;
+}
+
+message JiraUser {
+  string account_id = 1;
+  string display_name = 2;
+  string email = 3;
+  string avatar_url = 4;
+}
+
+message Issue {
+  string id = 1;
+  string key = 2;
+  string project_key = 3;
+  Fields fields = 4;
+  repeated StatusChange status_changes = 5;
+}
+
+message Fields {
+  string summary = 1;
+  string description = 2;
+  string issue_type = 3;
+  string priority = 4;
+  string status = 5;
+  JiraUser creator = 6;
+  JiraUser assignee = 7;
+  google.protobuf.Timestamp created = 8;
+  google.protobuf.Timestamp updated = 9;
+  google.protobuf.Timestamp resolution_date = 10;
+  int32 time_spent = 11;
+}
+
+message StatusChange {
+  google.protobuf.Timestamp change_time = 1;
+  JiraUser author = 2;
+  string from_status = 3;
+  string to_status = 4;
+}
