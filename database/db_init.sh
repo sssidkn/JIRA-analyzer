@@ -1,0 +1,1 @@
+psql -U pguser -d testdb -f docker-entrypoint-initdb.d/20250522111003_init.sql
