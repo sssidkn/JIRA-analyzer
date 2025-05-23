@@ -1,4 +1,4 @@
-package main
+package client
 
 import (
 	"context"
@@ -7,12 +7,11 @@ import (
 	"time"
 
 	pb "github.com/sssidkn/JIRA-analyzer/pkg/api/connector"
-
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-func main() {
+func Client() {
 	conn, err := grpc.Dial("localhost:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)
