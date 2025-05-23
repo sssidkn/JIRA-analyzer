@@ -2,6 +2,7 @@
 -- +goose StatementBegin
 CREATE TABLE Projects (
                         id serial PRIMARY KEY,
+                        key TEXT,
                         title TEXT
 );
 
