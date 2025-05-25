@@ -1,6 +1,8 @@
 package logger
 
 import (
+	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -16,6 +18,7 @@ type Logger struct {
 
 func New(logDir string) (*Logger, error) {
 	var logInstance = logrus.New()
+	logInstance.SetOutput(io.Discard)
 
 	if err := os.MkdirAll(logDir, 0755); err != nil {
 		return nil, err
@@ -98,24 +101,12 @@ func (hook *consoleHook) Levels() []logrus.Level {
 }
 
 func (hook *consoleHook) Fire(entry *logrus.Entry) error {
-	logrus.SetFormatter(&logrus.TextFormatter{
-		FullTimestamp:   true,
-		TimestampFormat: "2006-01-02 15:04:05",
-	})
-	logrus.SetOutput(os.Stdout)
-
-	switch entry.Level {
-	case logrus.PanicLevel:
-		logrus.Panic(entry.Message)
-	case logrus.FatalLevel:
-		logrus.Fatal(entry.Message)
-	case logrus.ErrorLevel:
-		logrus.Error(entry.Message)
-	case logrus.WarnLevel:
-		logrus.Warn(entry.Message)
+	line, err := entry.String()
+	if err != nil {
+		return err
 	}
-
-	return nil
+	_, err = fmt.Fprintln(os.Stdout, line)
+	return err
 }
 
 func Middleware(l *Logger) gin.HandlerFunc {
@@ -127,6 +118,7 @@ func Middleware(l *Logger) gin.HandlerFunc {
 		endTime := time.Now()
 		latency := endTime.Sub(startTime)
 		statusCode := c.Writer.Status()
+
 		clientIP := c.ClientIP()
 		method := c.Request.Method
 		path := c.Request.URL.Path
@@ -151,4 +143,20 @@ func Middleware(l *Logger) gin.HandlerFunc {
 			entry.Info("HTTP Request")
 		}
 	}
+}
+
+func (l *Logger) Error(args ...interface{}) {
+	l.logger.Error(args)
+}
+func (l *Logger) Info(args ...interface{}) {
+	l.logger.Info(args)
+}
+func (l *Logger) Debug(args ...interface{}) {
+	l.logger.Debug(args)
+}
+func (l *Logger) Warn(args ...interface{}) {
+	l.logger.Warn(args)
+}
+func (l *Logger) Fatal(args ...interface{}) {
+	l.logger.Fatal(args)
 }
