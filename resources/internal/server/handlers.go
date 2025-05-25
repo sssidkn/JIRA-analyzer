@@ -12,15 +12,12 @@ import (
 func (s *Server) getProjects(c *gin.Context) {
 	limit, err := strconv.Atoi(c.Query("limit"))
 	if err != nil {
-		c.String(http.StatusBadRequest, err.Error())
-		return
+		limit = 20
 	}
 	offset, err := strconv.Atoi(c.Query("offset"))
 	if err != nil {
-		c.String(http.StatusBadRequest, err.Error())
-		return
+		offset = 0
 	}
-	//TODO default value
 
 	ctx := c.Request.Context()
 	response, err := s.service.GetProjects(ctx, limit, offset)
