@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"jira-connector/internal/models"
+	"jira-connector/pkg/logger"
+	"time"
 )
 
 type Issue = models.JiraIssue
@@ -18,13 +20,13 @@ type Repository interface {
 
 type APIClient interface {
 	GetProject(ctx context.Context, projectKey string) (*Project, error)
-
 	GetProjects(ctx context.Context, limit, page int, search string) ([]models.ProjectInfo, error)
 }
 
 type JiraConnector struct {
 	repo      Repository
 	apiClient APIClient
+	logger    logger.Logger
 }
 
 func NewJiraConnector(opts ...Option) (*JiraConnector, error) {
@@ -37,6 +39,16 @@ func NewJiraConnector(opts ...Option) (*JiraConnector, error) {
 		}
 	}
 	return jc, nil
+}
+
+func WithLogger(logger logger.Logger) Option {
+	return func(jc *JiraConnector) error {
+		if logger == nil {
+			return fmt.Errorf("ERROR: logger is nil")
+		}
+		jc.logger = logger
+		return nil
+	}
 }
 
 func WithRepository(repo Repository) Option {
@@ -68,13 +80,17 @@ func (jc *JiraConnector) GetProjects(ctx context.Context, limit, page int, searc
 }
 
 func (jc *JiraConnector) UpdateProject(ctx context.Context, projectKey string) (*Project, error) {
+	lastUpdate := time.Now()
 	project, err := jc.apiClient.GetProject(ctx, projectKey)
 	if err != nil {
 		return nil, err
 	}
+	jc.logger.Info(fmt.Sprintf("Project %s saving", project.Name))
+	project.LastUpdate = lastUpdate
 	err = jc.repo.SaveProject(ctx, *project)
 	if err != nil {
 		return nil, err
 	}
+	jc.logger.Info(fmt.Sprintf("Project %s saved", project.Name))
 	return project, nil
 }

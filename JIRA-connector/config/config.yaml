@@ -1,6 +1,6 @@
 Jira:
   BaseURL: https://issues.apache.org/jira/rest/api/2
-  MaxConnections: 1
+  MaxConnections: 20
   RetryCount: 1
   MaxResults: 50
 Postgres:

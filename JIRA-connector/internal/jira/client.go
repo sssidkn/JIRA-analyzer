@@ -6,15 +6,19 @@ import (
 	"fmt"
 	"io"
 	"jira-connector/internal/models"
+	"jira-connector/pkg/logger"
 	"net/http"
 	"net/url"
 	"strings"
 	"sync"
+
+	"github.com/google/uuid"
 )
 
 type Config struct {
 	BaseURL        string `yaml:"BaseURL" env:"BASE_URL"`
 	MaxConnections int    `yaml:"MaxConnections" env:"RETRY_COUNT"`
+	MaxProcesses   int    `yaml:"MaxProcesses" env:"MAX_PROCESSES"`
 	RetryCount     int    `yaml:"RetryCount" env:"RETRY_COUNT"`
 	MaxResults     int    `yaml:"MaxResults" env:"MAX_RESULTS"`
 }
@@ -22,22 +26,27 @@ type Config struct {
 type Client struct {
 	httpClient *http.Client
 	config     Config
+	logger     logger.Logger
 }
 
 func NewClient(cfg Config) *Client {
 	return &Client{
-		httpClient: &http.Client{
-			Transport: &http.Transport{
-				MaxIdleConns:    cfg.MaxConnections,
-				MaxConnsPerHost: cfg.MaxConnections,
-			},
-		},
-		config: cfg,
+		httpClient: &http.Client{},
+		config:     cfg,
 	}
+}
+
+func (c *Client) SetLogger(log logger.Logger) {
+	c.logger = log.With(logger.Field{Key: "module", Value: "JIRA_API_Client"})
 }
 
 func (c *Client) GetProject(ctx context.Context, projectKey string) (*models.JiraProject, error) {
 	url := fmt.Sprintf("%s/project/%s", c.config.BaseURL, projectKey)
+	log := c.logger.With(
+		logger.Field{Key: "project_key", Value: projectKey},
+		logger.Field{Key: "project_url", Value: url},
+	)
+	log.Info("Fetching project")
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -61,12 +70,15 @@ func (c *Client) GetProject(ctx context.Context, projectKey string) (*models.Jir
 	}
 	var issues []models.JiraIssue
 
+	log.Info("Fetching issues count")
 	total, err := c.getTotalIssuesCount(ctx, projectKey)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get total issues count: %w", err)
 	}
-	fmt.Println(total)
+	log.Info("Fetched issues count", logger.Field{Key: "total", Value: total})
+	log.Info("Fetching issues")
 	issues, err = c.getAllIssues(ctx, projectKey, total)
+	log.Info("Fetched issues")
 	if err != nil {
 		return nil, fmt.Errorf("failed to get issues: %w", err)
 	}
@@ -76,6 +88,7 @@ func (c *Client) GetProject(ctx context.Context, projectKey string) (*models.Jir
 
 func (c *Client) getTotalIssuesCount(ctx context.Context, projectKey string) (int, error) {
 	jql := fmt.Sprintf("project=%s", projectKey)
+	c.logger.Info("starting getting total issues count")
 	params := url.Values{
 		"jql":        []string{jql},
 		"startAt":    []string{"0"},
@@ -90,18 +103,18 @@ func (c *Client) getTotalIssuesCount(ctx context.Context, projectKey string) (in
 	if err := c.doRequest(ctx, endpoint, &result); err != nil {
 		return 0, fmt.Errorf("failed to get total issues count: %w", err)
 	}
-
+	c.logger.Info(fmt.Sprintf("finished getting total issues count. Count: %d", result.Total))
 	return result.Total, nil
 }
 
 func (c *Client) GetProjects(ctx context.Context, limit, page int, search string) ([]models.ProjectInfo, error) {
+	c.logger.Info("starting getting projects")
 	response, err := http.Get(c.config.BaseURL + "/project")
 	if err != nil {
 		return nil, err
 	}
 
 	body, err := io.ReadAll(response.Body)
-
 	if err != nil {
 		return nil, err
 	}
@@ -117,13 +130,13 @@ func (c *Client) GetProjects(ctx context.Context, limit, page int, search string
 
 	projectsCount := 0
 
-	for _, elem := range jiraProjects {
-		if strings.Contains(strings.ToLower(elem.Name), strings.ToLower(search)) {
+	for _, project := range jiraProjects {
+		if strings.Contains(strings.ToLower(project.Name), strings.ToLower(search)) {
 			projectsCount++
 			projects = append(projects, models.ProjectInfo{
-				ID:   elem.ID,
-				Name: elem.Name,
-				Key:  elem.Key,
+				ID:   project.ID,
+				Name: project.Name,
+				Key:  project.Key,
 			})
 		}
 	}
@@ -140,9 +153,15 @@ func (c *Client) GetProjects(ctx context.Context, limit, page int, search string
 func (c *Client) issuePageWorker(ctx context.Context, projectKey string, pageSize int,
 	wg *sync.WaitGroup, tasks <-chan int, results chan<- *result) {
 	defer wg.Done()
+	log := c.logger.With(
+		logger.Field{Key: "project_key", Value: projectKey},
+		logger.Field{Key: "page_size", Value: pageSize},
+		logger.Field{Key: "worker", Value: ctx.Value("worker_id")},
+	)
 
 	for page := range tasks {
 		startAt := page * pageSize
+		log.Debug("Processing page", logger.Field{Key: "page", Value: page})
 		issues, err := c.getIssuesPage(ctx, projectKey, startAt, pageSize)
 
 		select {
@@ -157,6 +176,7 @@ func (c *Client) getAllIssues(ctx context.Context, projectKey string, total int)
 	pageSize := c.config.MaxResults
 
 	totalPages := (total + pageSize - 1) / pageSize
+	c.logger.Debug(fmt.Sprintf("Total pages: %d", totalPages))
 
 	tasks := make(chan int, totalPages)
 	results := make(chan *result, totalPages)
@@ -164,6 +184,8 @@ func (c *Client) getAllIssues(ctx context.Context, projectKey string, total int)
 
 	for i := 0; i < c.config.MaxConnections; i++ {
 		wg.Add(1)
+
+		ctx = context.WithValue(ctx, "worker_id", uuid.New())
 		go c.issuePageWorker(ctx, projectKey, pageSize, &wg, tasks, results)
 	}
 

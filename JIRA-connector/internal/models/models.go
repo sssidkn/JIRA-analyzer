@@ -1,10 +1,15 @@
 package models
 
+import (
+	"time"
+)
+
 type JiraProject struct {
-	ID     string      `json:"id"`
-	Key    string      `json:"key"`
-	Name   string      `json:"name"`
-	Issues []JiraIssue `json:"issues"`
+	ID         string      `json:"id"`
+	Key        string      `json:"key"`
+	Name       string      `json:"name"`
+	Issues     []JiraIssue `json:"issues"`
+	LastUpdate time.Time
 }
 
 type ProjectInfo struct {
@@ -44,7 +49,7 @@ type Fields struct {
 	Resolution struct {
 		Date string `json:"resolutiondate"`
 	} `json:"resolution"`
-	Timespent *int `json:"timespent"`
+	Timespent *int `json:"timeSpentSeconds"`
 }
 
 type Changelog struct {

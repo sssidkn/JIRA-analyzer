@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"jira-connector/internal/models"
+	"jira-connector/pkg/logger"
 	"strings"
 	"time"
 
@@ -14,7 +15,12 @@ import (
 type Project = models.JiraProject
 
 type ProjectRepository struct {
-	db *pgxpool.Pool
+	db     *pgxpool.Pool
+	logger logger.Logger
+}
+
+func (p *ProjectRepository) SetLogger(logger logger.Logger) {
+	p.logger = logger
 }
 
 func NewProjectRepository(db *pgxpool.Pool) *ProjectRepository {
@@ -52,9 +58,8 @@ func (p *ProjectRepository) SaveProject(ctx context.Context, project Project) er
 	defer tx.Rollback(ctx)
 
 	issues := project.Issues
-
 	_, err = tx.Prepare(ctx, "save-project", `
-		INSERT INTO Projects (title, key) VALUES ($1, $2) ON CONFLICT DO NOTHING RETURNING id
+		INSERT INTO Projects (title, key, lastUpdate) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING RETURNING id
 	`)
 	if err != nil {
 		return err
@@ -99,7 +104,8 @@ func (p *ProjectRepository) SaveProject(ctx context.Context, project Project) er
 
 	for _, issue := range issues {
 		var projectID int
-		err = tx.QueryRow(ctx, "save-project", project.Name, project.Key).Scan(&projectID)
+		lastUpdate, err := parseJiraTime(issue.Fields.Updated)
+		err = tx.QueryRow(ctx, "save-project", project.Name, project.Key, lastUpdate).Scan(&projectID)
 		if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 			return err
 		}
