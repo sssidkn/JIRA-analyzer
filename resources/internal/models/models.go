@@ -17,7 +17,7 @@ type ProjectInfo struct {
 	ReopenedIssuesCount int     `json:"reopenedIssuesCount"`
 	ProgressIssuesCount int     `json:"progressIssuesCount"`
 	AverageTime         float64 `json:"averageTime"`
-	AverageIssuesCount  int     `json:"averageIssuesCount"`
+	AverageIssuesCount  float64 `json:"averageIssuesCount"`
 }
 
 type Link struct {

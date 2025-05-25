@@ -1,0 +1,8 @@
+port: 8085
+resourceTimeout: 5s
+postgres:
+  dbUser: pguser
+  dbPassword: pgpwd
+  dbHost: localhost
+  dbPort: 5434
+  dbName: testdb
