@@ -1,0 +1,14 @@
+@import "fonts";
+
+:root {
+  --black-color: #1A1A1A;
+  --white-color: #E9E9E9;
+  --primary-color: #9E2AFF;
+  --gray-color: #4E4E4E;
+}
+
+body {
+  background: var(--black-color);
+  color: var(--white-color);
+}
+
