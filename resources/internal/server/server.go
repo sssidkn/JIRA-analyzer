@@ -59,7 +59,10 @@ func (s *Server) registerRouters() {
 		api.GET("/projects", s.getProjects)
 		api.GET("projects/:id", s.getProject)
 		api.DELETE("/projects/:id", s.deleteProject)
-		//TODO issues, history
+		api.GET("/issues/:id", s.getIssue)
+		api.GET("/issues/by-project/:projectId", s.getIssuesByProject)
+		api.GET("/histories/by-issue/:issueId", s.getHistoryByIssue)
+		api.GET("/histories/by-author/:authorId", s.getHistoryByAuthor)
 	}
 }
 

@@ -46,7 +46,7 @@ func main() {
 	lg.Debug("successful connection to postgres")
 
 	rp := repository.New(pg)
-	sv := service.New(rp, *lg)
+	sv := service.New(rp, *lg, cfg.Port)
 	server := server.New(sv, lg, cfg.ResourceTimeout)
 
 	go func() {
