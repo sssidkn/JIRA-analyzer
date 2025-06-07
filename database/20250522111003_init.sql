@@ -43,6 +43,22 @@ CREATE TABLE StatusChanges
     fromStatus TEXT,
     toStatus   TEXT
 );
+
+CREATE TABLE OpenTaskTime
+(
+    projectId INT         NOT NULL,
+    FOREIGN KEY (projectId) REFERENCES Projects (id) ON DELETE CASCADE ON UPDATE CASCADE,
+    createdAt timestamp,
+    data json
+);
+
+CREATE TABLE TaskPriorityCount
+(
+    projectId INT         NOT NULL,
+    FOREIGN KEY (projectId) REFERENCES Projects (id) ON DELETE CASCADE ON UPDATE CASCADE,
+    createdAt timestamp,
+    data json
+);
 -- +goose StatementEnd
 
 -- +goose Down
