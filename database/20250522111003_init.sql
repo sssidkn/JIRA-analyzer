@@ -48,7 +48,7 @@ CREATE TABLE OpenTaskTime
 (
     projectId INT         NOT NULL,
     FOREIGN KEY (projectId) REFERENCES Projects (id) ON DELETE CASCADE ON UPDATE CASCADE,
-    createdAt timestamp,
+    createdAt TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     data json
 );
 
@@ -56,7 +56,7 @@ CREATE TABLE TaskPriorityCount
 (
     projectId INT         NOT NULL,
     FOREIGN KEY (projectId) REFERENCES Projects (id) ON DELETE CASCADE ON UPDATE CASCADE,
-    createdAt timestamp,
+    createdAt TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     data json
 );
 -- +goose StatementEnd
