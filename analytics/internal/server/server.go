@@ -2,11 +2,14 @@ package server
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/sssidkn/JIRA-analyzer/internal/service"
+	"github.com/sssidkn/JIRA-analyzer/pkg/logger"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
@@ -33,8 +36,11 @@ type Server struct {
 // @BasePath /api
 // @schemes http
 
-func New(service service.Service) *Server {
-	e := gin.Default()
+func New(service service.Service, l *logger.Logger, timeout time.Duration) *Server {
+	e := gin.New()
+	e.Use(gin.Recovery())
+	e.Use(timeoutMiddleware(timeout))
+	e.Use(logger.Middleware(l))
 	s := &Server{
 		engine:  e,
 		service: service,
@@ -66,4 +72,30 @@ func (s *Server) Run(port int) error {
 
 func (s *Server) Shutdown(ctx context.Context) error {
 	return s.httpServer.Shutdown(ctx)
+}
+
+func timeoutMiddleware(timeout time.Duration) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ctx, cancel := context.WithTimeout(c.Request.Context(), timeout)
+		defer cancel()
+
+		c.Request = c.Request.WithContext(ctx)
+		done := make(chan struct{})
+
+		go func() {
+			c.Next()
+			close(done)
+		}()
+
+		select {
+		case <-done:
+			return
+		case <-ctx.Done():
+			if errors.Is(ctx.Err(), context.DeadlineExceeded) {
+				c.AbortWithStatusJSON(http.StatusRequestTimeout, gin.H{
+					"error": "Request timeout",
+				})
+			}
+		}
+	}
 }

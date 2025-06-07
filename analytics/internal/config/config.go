@@ -10,7 +10,6 @@ import (
 
 type Config struct {
 	Port             int             `yaml:"port" default:"8084"`
-	ResourceTimeout  time.Duration   `yaml:"resourceTimeout" default:"5s"`
 	AnalyticsTimeout time.Duration   `yaml:"analyticsTimeout" default:"15s"`
 	Postgres         postgres.Config `yaml:"postgres"`
 }

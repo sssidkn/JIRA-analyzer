@@ -1,5 +1,4 @@
 port: 8084
-resourceTimeout: 5s
 analyticsTimeout: 15s
 postgres:
   dbUser: pguser
