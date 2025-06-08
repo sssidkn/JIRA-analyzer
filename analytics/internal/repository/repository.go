@@ -16,6 +16,8 @@ type Repository interface {
 	GetTaskTwo(ctx context.Context, key string) (*[]dto.IssueTaskTwo, error)
 	DeleteTasks(ctx context.Context, key string) (bool, error)
 	IsAnalyzed(ctx context.Context, key string) (bool, error)
+	CompareTaskOne(ctx context.Context, keys *[]string) (*[]dto.ComparisonTaskOne, error)
+	CompareTaskTwo(ctx context.Context, keys *[]string) (*[]dto.ComparisonTaskTwo, error)
 }
 
 type repo struct {
@@ -30,7 +32,7 @@ func (r *repo) MakeTaskOne(ctx context.Context, key string) (*[]dto.IssueTaskOne
 	id, err := r.checkExistenceOfProject(key)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, ErrNotExistProject
+			return nil, ErrNotExistProject(key)
 		}
 		return nil, ErrExistence(err)
 	}
@@ -128,7 +130,7 @@ func (r *repo) MakeTaskTwo(ctx context.Context, key string) (*[]dto.IssueTaskTwo
 	id, err := r.checkExistenceOfProject(key)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, ErrNotExistProject
+			return nil, ErrNotExistProject(key)
 		}
 		return nil, ErrExistence(err)
 	}
@@ -211,7 +213,7 @@ func (r *repo) GetTaskOne(ctx context.Context, key string) (*[]dto.IssueTaskOne,
 	id, err := r.checkExistenceOfProject(key)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, ErrNotExistProject
+			return nil, ErrNotExistProject(key)
 		}
 		return nil, ErrExistence(err)
 	}
@@ -221,7 +223,7 @@ func (r *repo) GetTaskOne(ctx context.Context, key string) (*[]dto.IssueTaskOne,
 	err = r.db.QueryRow(ctx, query, id).Scan(&issues)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, ErrNotExistData
+			return nil, ErrNotExistData(key)
 		}
 		return nil, ErrScan(err)
 	}
@@ -232,7 +234,7 @@ func (r *repo) GetTaskTwo(ctx context.Context, key string) (*[]dto.IssueTaskTwo,
 	id, err := r.checkExistenceOfProject(key)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, ErrNotExistProject
+			return nil, ErrNotExistProject(key)
 		}
 		return nil, ErrExistence(err)
 	}
@@ -242,7 +244,7 @@ func (r *repo) GetTaskTwo(ctx context.Context, key string) (*[]dto.IssueTaskTwo,
 	err = r.db.QueryRow(ctx, query, id).Scan(&issues)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, ErrNotExistData
+			return nil, ErrNotExistData(key)
 		}
 		return nil, ErrScan(err)
 	}
@@ -253,7 +255,7 @@ func (r *repo) DeleteTasks(ctx context.Context, key string) (bool, error) {
 	id, err := r.checkExistenceOfProject(key)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return false, ErrNotExistProject
+			return false, ErrNotExistProject(key)
 		}
 		return false, ErrExistence(err)
 	}
@@ -292,14 +294,12 @@ func (r *repo) IsAnalyzed(ctx context.Context, key string) (bool, error) {
 	id, err := r.checkExistenceOfProject(key)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return false, ErrNotExistProject
+			return false, ErrNotExistProject(key)
 		}
 		return false, ErrExistence(err)
 	}
 
-	var exist bool
-	query := `SELECT EXISTS (SELECT 1 FROM opentasktime WHERE projectid = $1)`
-	err = r.db.QueryRow(ctx, query, id).Scan(&exist)
+	exist, err := r.checkExistenceOfDataTaskOne(id)
 	if err != nil {
 		return false, ErrExistence(err)
 	}
@@ -307,8 +307,7 @@ func (r *repo) IsAnalyzed(ctx context.Context, key string) (bool, error) {
 		return true, nil
 	}
 
-	query = `SELECT EXISTS (SELECT 1 FROM taskprioritycount WHERE projectid = $1)`
-	err = r.db.QueryRow(ctx, query, id).Scan(&exist)
+	exist, err = r.checkExistenceOfDataTaskTwo(id)
 	if err != nil {
 		return false, ErrExistence(err)
 	}
@@ -318,8 +317,96 @@ func (r *repo) IsAnalyzed(ctx context.Context, key string) (bool, error) {
 	return false, nil
 }
 
+func (r *repo) CompareTaskOne(ctx context.Context, keys *[]string) (*[]dto.ComparisonTaskOne, error) {
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		return nil, ErrBeginTransaction(err)
+	}
+	defer tx.Rollback(ctx)
+
+	query := `SELECT data FROM opentasktime WHERE projectid = $1`
+	var comparisons []dto.ComparisonTaskOne
+	for _, key := range *keys {
+		id, err := r.checkExistenceOfProject(key)
+		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				return nil, ErrNotExistProject(key)
+			}
+			return nil, ErrExistence(err)
+		}
+
+		var comparison dto.ComparisonTaskOne
+		err = tx.QueryRow(ctx, query, id).Scan(&comparison.Data)
+		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				return nil, ErrNotExistData(key)
+			}
+			return nil, ErrScan(err)
+		}
+		comparison.Key = key
+		comparisons = append(comparisons, comparison)
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		return nil, ErrCommitTransaction(err)
+	}
+
+	return &comparisons, nil
+}
+
+func (r *repo) CompareTaskTwo(ctx context.Context, keys *[]string) (*[]dto.ComparisonTaskTwo, error) {
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		return nil, ErrBeginTransaction(err)
+	}
+	defer tx.Rollback(ctx)
+
+	query := `SELECT data FROM taskprioritycount WHERE projectid = $1`
+	var comparisons []dto.ComparisonTaskTwo
+	for _, key := range *keys {
+		id, err := r.checkExistenceOfProject(key)
+		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				return nil, ErrNotExistProject(key)
+			}
+			return nil, ErrExistence(err)
+		}
+
+		var comparison dto.ComparisonTaskTwo
+		err = tx.QueryRow(ctx, query, id).Scan(&comparison.Data)
+		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				return nil, ErrNotExistData(key)
+			}
+			return nil, ErrScan(err)
+		}
+		comparison.Key = key
+		comparisons = append(comparisons, comparison)
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		return nil, ErrCommitTransaction(err)
+	}
+
+	return &comparisons, nil
+}
+
 func (r *repo) checkExistenceOfProject(key string) (int, error) {
 	var id int
 	err := r.db.QueryRow(context.Background(), `SELECT id FROM projects WHERE key = $1`, key).Scan(&id)
 	return id, err
+}
+
+func (r *repo) checkExistenceOfDataTaskOne(id int) (bool, error) {
+	var exist bool
+	err := r.db.QueryRow(context.Background(), `SELECT EXISTS (SELECT 1 FROM opentasktime WHERE projectid = $1)`, id).Scan(&exist)
+	return exist, err
+}
+
+func (r *repo) checkExistenceOfDataTaskTwo(id int) (bool, error) {
+	var exist bool
+	err := r.db.QueryRow(context.Background(), `SELECT EXISTS (SELECT 1 FROM taskprioritycount WHERE projectid = $1)`, id).Scan(&exist)
+	return exist, err
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/sssidkn/JIRA-analyzer/internal/repository"
 	"github.com/sssidkn/JIRA-analyzer/pkg/logger"
@@ -14,6 +15,7 @@ type Service interface {
 	GetTask(ctx context.Context, task int, key string) (interface{}, error)
 	DeleteTasks(ctx context.Context, key string) (bool, error)
 	IsAnalyzed(ctx context.Context, key string) (bool, error)
+	Compare(ctx context.Context, task int, keys string) (interface{}, error)
 }
 
 type service struct {
@@ -28,6 +30,8 @@ func New(repo repository.Repository, log logger.Logger) *service {
 	s.handlers[2] = s.makeTaskTwo //number of tasks by priority level
 	s.handlers[3] = s.getTaskOne
 	s.handlers[4] = s.getTaskTwo
+	s.handlers[5] = s.compareTaskOne
+	s.handlers[6] = s.compareTaskTwo
 	return s
 }
 
@@ -120,4 +124,31 @@ func (s *service) IsAnalyzed(ctx context.Context, key string) (bool, error) {
 		return false, err
 	}
 	return isAnalyzed, nil
+}
+
+func (s *service) Compare(ctx context.Context, task int, keys string) (interface{}, error) {
+	if hand, exists := s.handlers[task+4]; exists {
+		return hand(ctx, keys)
+	}
+	return nil, fmt.Errorf("task %d not found", task)
+}
+
+func (s *service) compareTaskOne(ctx context.Context, keys string) (interface{}, error) {
+	keySlice := strings.Split(keys, ",")
+	comparisons, err := s.repo.CompareTaskOne(ctx, &keySlice)
+	if err != nil {
+		s.log.Error(fmt.Errorf("error comparing task 1 for projects %s: %w", keys, err))
+		return nil, err
+	}
+	return comparisons, nil
+}
+
+func (s *service) compareTaskTwo(ctx context.Context, keys string) (interface{}, error) {
+	keySlice := strings.Split(keys, ",")
+	comparisons, err := s.repo.CompareTaskTwo(ctx, &keySlice)
+	if err != nil {
+		s.log.Error(fmt.Errorf("error comparing task 2 for projects %s: %w", keys, err))
+		return nil, err
+	}
+	return comparisons, nil
 }

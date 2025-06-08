@@ -2,8 +2,13 @@ package repository
 
 import "fmt"
 
-var ErrNotExistProject = fmt.Errorf("the project does not exist")
-var ErrNotExistData = fmt.Errorf("the data of this project for this task does not exist")
+func ErrNotExistProject(key string) error {
+	return fmt.Errorf("project %s does not exist", key)
+}
+func ErrNotExistData(key string) error {
+	return fmt.Errorf("the data of project %s for this task does not exist", key)
+}
+
 var ErrAlreadyExist = fmt.Errorf("already exist")
 
 func ErrExistence(err error) error {

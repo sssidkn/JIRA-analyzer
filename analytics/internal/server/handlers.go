@@ -6,7 +6,6 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/sssidkn/JIRA-analyzer/internal/repository"
 )
 
 func (s *Server) getGraph(c *gin.Context) {
@@ -22,11 +21,7 @@ func (s *Server) getGraph(c *gin.Context) {
 	}
 	issues, err := s.service.GetTask(c.Request.Context(), task, key)
 	if err != nil {
-		if errors.Is(err, repository.ErrNotExistProject) {
-			c.String(http.StatusNotFound, err.Error())
-			return
-		}
-		if errors.Is(err, repository.ErrNotExistData) {
+		if errors.Is(err, errNotExist) {
 			c.String(http.StatusNotFound, err.Error())
 			return
 		}
@@ -50,7 +45,7 @@ func (s *Server) makeGraph(c *gin.Context) {
 	ctx := c.Request.Context()
 	issues, err := s.service.MakeTask(ctx, task, key)
 	if err != nil {
-		if errors.Is(err, repository.ErrNotExistProject) {
+		if errors.Is(err, errNotExist) {
 			c.String(http.StatusNotFound, err.Error())
 			return
 		}
@@ -84,6 +79,10 @@ func (s *Server) isAnalyzed(c *gin.Context) {
 
 	ok, err := s.service.IsAnalyzed(c.Request.Context(), key)
 	if err != nil {
+		if errors.Is(err, errNotExist) {
+			c.String(http.StatusNotFound, err.Error())
+			return
+		}
 		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -91,5 +90,27 @@ func (s *Server) isAnalyzed(c *gin.Context) {
 }
 
 func (s *Server) compare(c *gin.Context) {
+	task, err := strconv.Atoi(c.Params.ByName("taskNumber"))
+	if err != nil {
+		c.String(http.StatusBadRequest, err.Error())
+		return
+	}
+	keys := c.Query("project")
+	if keys == "" {
+		c.String(http.StatusBadRequest, "no key")
+		return
+	}
 
+	comparisons, err := s.service.Compare(c.Request.Context(), task, keys)
+	if err != nil {
+		if errors.Is(err, errNotExist) {
+			c.String(http.StatusNotFound, err.Error())
+			return
+		}
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+	c.JSON(http.StatusOK, comparisons)
 }
+
+var errNotExist = errors.New("does not exist")
