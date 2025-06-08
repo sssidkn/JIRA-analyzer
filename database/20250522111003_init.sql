@@ -63,6 +63,8 @@ CREATE TABLE TaskPriorityCount
 
 -- +goose Down
 -- +goose StatementBegin
+DROP TABLE IF EXISTS "OpenTaskTime";
+DROP TABLE IF EXISTS "TaskPriorityCount";
 DROP TABLE IF EXISTS "StatusChanges";
 DROP TABLE IF EXISTS "Issue";
 DROP TABLE IF EXISTS "Author";
