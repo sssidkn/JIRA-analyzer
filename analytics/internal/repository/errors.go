@@ -2,7 +2,9 @@ package repository
 
 import "fmt"
 
-var ErrNotExist = fmt.Errorf("not exist")
+var ErrNotExistProject = fmt.Errorf("the project does not exist")
+var ErrNotExistData = fmt.Errorf("the data of this project for this task does not exist")
+var ErrAlreadyExist = fmt.Errorf("already exist")
 
 func ErrExistence(err error) error {
 	return fmt.Errorf("failed to check existense: %w", err)
@@ -26,4 +28,8 @@ func ErrBeginTransaction(e error) error {
 
 func ErrCommitTransaction(e error) error {
 	return fmt.Errorf("failed to commit transaction: %w", e)
+}
+
+func ErrInsert(e error) error {
+	return fmt.Errorf("failed to insert: %w", e)
 }
