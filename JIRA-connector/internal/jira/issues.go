@@ -80,7 +80,7 @@ func (c *Client) getIssuesBy(ctx context.Context, total int, params url.Values) 
 		close(results)
 	}()
 
-	var allIssues []models.JiraIssue
+	allIssues := make([]models.JiraIssue, 0, total)
 	var errors []error
 
 	for res := range results {

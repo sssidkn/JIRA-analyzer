@@ -1,6 +1,8 @@
 package logger
 
 import (
+	"time"
+
 	"github.com/sirupsen/logrus"
 )
 
@@ -10,19 +12,26 @@ type LogrusLogger struct {
 
 func NewLogrusLogger() *LogrusLogger {
 	log := logrus.New()
+	log.SetFormatter(&logrus.TextFormatter{
+		ForceColors:     true,
+		FullTimestamp:   true,
+		TimestampFormat: time.DateTime,
+		DisableSorting:  false,
+		PadLevelText:    true,
+	})
 	return &LogrusLogger{logger: log}
 }
 
 func (l *LogrusLogger) Info(msg string, fileds ...Field) {
-	l.logger.WithFields(toLogrusFields(fileds)).Info(msg, fileds)
+	l.logger.WithFields(toLogrusFields(fileds)).Info(msg)
 }
 
 func (l *LogrusLogger) Debug(msg string, fileds ...Field) {
-	l.logger.WithFields(toLogrusFields(fileds)).Debug(msg, fileds)
+	l.logger.WithFields(toLogrusFields(fileds)).Debug(msg)
 }
 
 func (l *LogrusLogger) Warn(msg string, fileds ...Field) {
-	l.logger.WithFields(toLogrusFields(fileds)).Warn(msg, fileds)
+	l.logger.WithFields(toLogrusFields(fileds)).Warn(msg)
 }
 
 func (l *LogrusLogger) Error(msg string, fileds ...Field) {

@@ -51,9 +51,6 @@ func (c *Client) doRequest(ctx context.Context, url string, result interface{}) 
 	}
 
 	data, err := io.ReadAll(resp.Body)
-	if len(string(data)) < 1000 {
-		fmt.Println(string(data))
-	}
 	if err != nil {
 		return fmt.Errorf("failed to read response body: %w", err)
 	}
