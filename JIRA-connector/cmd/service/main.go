@@ -45,8 +45,10 @@ func main() {
 	var log logger.Logger = logger.NewLogrusLogger()
 	log.SetLevel(cfg.LogLevel)
 
-	jiraClient := jira.NewClient(cfg.Jira)
-	jiraClient.SetLogger(log)
+	jiraClient := jira.NewClient(
+		jira.WithConfig(cfg.Jira),
+		jira.WithLogger(log),
+	)
 
 	dbPool, err := postgres.New(cfg.Postgres)
 	if err != nil {

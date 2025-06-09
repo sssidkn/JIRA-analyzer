@@ -18,6 +18,34 @@ type Logger interface {
 	SetLevel(level Level)
 }
 
+type TestLogger struct {
+}
+
+func NewTestLogger() Logger {
+	return TestLogger{}
+}
+func (TestLogger) Debug(msg string, fields ...Field) {
+
+}
+
+func (TestLogger) Info(msg string, fields ...Field) {
+
+}
+
+func (TestLogger) Warn(msg string, fields ...Field) {
+
+}
+
+func (TestLogger) Error(msg string, fields ...Field) {
+}
+
+func (TestLogger) With(fields ...Field) Logger {
+	return TestLogger{}
+}
+
+func (TestLogger) SetLevel(level Level) {
+}
+
 type Field struct {
 	Key   string
 	Value interface{}

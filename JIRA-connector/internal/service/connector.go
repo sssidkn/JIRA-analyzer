@@ -8,21 +8,6 @@ import (
 	"time"
 )
 
-type Issue = models.JiraIssue
-type Project = models.JiraProject
-type Option = func(*JiraConnector) error
-
-type Repository interface {
-	SaveProject(ctx context.Context, project Project) error
-	ProjectExists(ctx context.Context, projectKey string) (bool, error)
-	Close() error
-}
-
-type APIClient interface {
-	GetProject(ctx context.Context, projectKey string) (*Project, error)
-	GetProjects(ctx context.Context, limit, page int, search string) ([]models.ProjectInfo, error)
-}
-
 type JiraConnector struct {
 	repo      Repository
 	apiClient APIClient
@@ -39,6 +24,22 @@ func NewJiraConnector(opts ...Option) (*JiraConnector, error) {
 		}
 	}
 	return jc, nil
+}
+
+type Issue = models.JiraIssue
+type Project = models.JiraProject
+type Option = func(*JiraConnector) error
+
+type Repository interface {
+	SaveProject(ctx context.Context, project Project) error
+	GetProjectInfo(ctx context.Context, projectKey string) (*models.ProjectInfo, error)
+	Close() error
+}
+
+type APIClient interface {
+	UpdateProject(ctx context.Context, projectKey string, lastUpdate time.Time) (*[]models.JiraIssue, error)
+	GetProject(ctx context.Context, projectKey string) (*Project, error)
+	GetProjects(ctx context.Context, limit, page int, search string) ([]models.ProjectInfo, error)
 }
 
 func WithLogger(logger logger.Logger) Option {
@@ -80,17 +81,46 @@ func (jc *JiraConnector) GetProjects(ctx context.Context, limit, page int, searc
 }
 
 func (jc *JiraConnector) UpdateProject(ctx context.Context, projectKey string) (*Project, error) {
-	lastUpdate := time.Now()
-	project, err := jc.apiClient.GetProject(ctx, projectKey)
+	jc.logger.Debug("Updating project", logger.Field{Key: "project_key", Value: projectKey})
+	projectInfo, err := jc.repo.GetProjectInfo(ctx, projectKey)
 	if err != nil {
 		return nil, err
 	}
-	jc.logger.Info(fmt.Sprintf("Project %s saving", project.Name))
-	project.LastUpdate = lastUpdate
+	updateTime := time.Now()
+	var project *Project
+	if projectInfo == nil {
+		jc.logger.Info("Project not found in DB", logger.Field{Key: "project_key", Value: projectKey})
+		jc.logger.Info("Fetching project from JIRA", logger.Field{Key: "project_key", Value: projectKey})
+		project, err = jc.apiClient.GetProject(ctx, projectKey)
+		if err != nil {
+			return nil, err
+		}
+		project.LastUpdate = updateTime
+	} else {
+		jc.logger.Info("Project found in DB", logger.Field{Key: "project_key", Value: projectKey})
+		jc.logger.Info("Fetching project from JIRA", logger.Field{Key: "project_key", Value: projectKey})
+		issues, err := jc.apiClient.UpdateProject(ctx, projectKey, projectInfo.LastUpdate)
+		if err != nil {
+			return nil, err
+		}
+		project = &Project{
+			ID:         projectInfo.ID,
+			Key:        projectKey,
+			Name:       projectInfo.Name,
+			Issues:     *issues,
+			LastUpdate: updateTime,
+		}
+		if len(*issues) == 0 {
+			jc.logger.Info("No new issues found", logger.Field{Key: "project_key", Value: projectKey})
+			return project, nil
+		}
+	}
+	jc.logger.Info("Saving project to DB", logger.Field{Key: "project_key", Value: projectKey})
 	err = jc.repo.SaveProject(ctx, *project)
 	if err != nil {
+		jc.logger.Error("Failed to save project to DB", logger.Field{Key: "project_key", Value: projectKey})
 		return nil, err
 	}
-	jc.logger.Info(fmt.Sprintf("Project %s saved", project.Name))
+	jc.logger.Info("Project saved to DB", logger.Field{Key: "project_key", Value: projectKey})
 	return project, nil
 }

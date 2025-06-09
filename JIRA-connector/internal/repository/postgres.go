@@ -5,8 +5,6 @@ import (
 	"errors"
 	"jira-connector/internal/models"
 	"jira-connector/pkg/logger"
-	"strings"
-	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -29,25 +27,26 @@ func NewProjectRepository(db *pgxpool.Pool) *ProjectRepository {
 	}
 }
 
-func parseJiraTime(timeStr string) (time.Time, error) {
-	if timeStr == "" {
-		return time.Time{}, nil
-	}
-	normalized := strings.Replace(timeStr, "+0000", "Z", 1)
-	return time.Parse(time.RFC3339, normalized)
-}
-
-func (p *ProjectRepository) ProjectExists(ctx context.Context, projectKey string) (bool, error) {
+// TODO: Задачка со звездочкой
+func (p *ProjectRepository) GetProjectInfo(ctx context.Context, projectKey string) (*models.ProjectInfo, error) {
 	var exists bool
 	err := p.db.QueryRow(ctx,
-		"SELECT EXISTS(SELECT 1 FROM Projects WHERE key = $1)",
+		`SELECT 
+        EXISTS(SELECT 1 FROM Projects WHERE key = $1)`,
 		projectKey,
 	).Scan(&exists)
-
-	if err != nil {
-		return false, err
+	if !exists {
+		return nil, nil
 	}
-	return exists, nil
+	var pi = &models.ProjectInfo{}
+	err = p.db.QueryRow(ctx,
+		`SELECT id, key, title, lastUpdate FROM Projects WHERE key = $1`,
+		projectKey,
+	).Scan(&pi.Key, &pi.Key, &pi.Name, &pi.LastUpdate)
+	if err != nil {
+		return nil, err
+	}
+	return pi, nil
 }
 
 func (p *ProjectRepository) SaveProject(ctx context.Context, project Project) error {
@@ -59,7 +58,9 @@ func (p *ProjectRepository) SaveProject(ctx context.Context, project Project) er
 
 	issues := project.Issues
 	_, err = tx.Prepare(ctx, "save-project", `
-		INSERT INTO Projects (title, key, lastUpdate) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING RETURNING id
+		INSERT INTO Projects (title, key) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE
+		                                                                  SET lastUpdate = $3
+		                                                                  RETURNING id
 	`)
 	if err != nil {
 		return err
@@ -104,8 +105,7 @@ func (p *ProjectRepository) SaveProject(ctx context.Context, project Project) er
 
 	for _, issue := range issues {
 		var projectID int
-		lastUpdate, err := parseJiraTime(issue.Fields.Updated)
-		err = tx.QueryRow(ctx, "save-project", project.Name, project.Key, lastUpdate).Scan(&projectID)
+		err = tx.QueryRow(ctx, "save-project", project.Name, project.Key, project.LastUpdate).Scan(&projectID)
 		if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 			return err
 		}
@@ -144,23 +144,11 @@ func (p *ProjectRepository) SaveProject(ctx context.Context, project Project) er
 				}
 			}
 		}
-		createdTime, err := parseJiraTime(issue.Fields.Created)
-		if err != nil {
-			return err
-		}
+		createdTime := issue.Fields.Created.Time
 
-		updatedTime, err := parseJiraTime(issue.Fields.Updated)
-		if err != nil {
-			return err
-		}
+		updatedTime := issue.Fields.Updated.Time
 
-		var closedTime time.Time
-		if issue.Fields.Resolution.Date != "" {
-			closedTime, err = parseJiraTime(issue.Fields.Resolution.Date)
-			if err != nil {
-				return err
-			}
-		}
+		closedTime := issue.Fields.Closed.Time
 		var issueID int
 		err = tx.QueryRow(ctx, "save-issue",
 			projectID,
@@ -175,7 +163,7 @@ func (p *ProjectRepository) SaveProject(ctx context.Context, project Project) er
 			createdTime,
 			closedTime,
 			updatedTime,
-			issue.Fields.Timespent,
+			issue.Fields.Timetracking.TimeSpentSeconds,
 		).Scan(&issueID)
 		if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 			return err
@@ -189,7 +177,7 @@ func (p *ProjectRepository) SaveProject(ctx context.Context, project Project) er
 		}
 		changelog := issue.Changelogs
 		for _, history := range changelog.Histories {
-			changeTime, err := parseJiraTime(history.Created)
+			changeTime := history.Created.Time
 			if err != nil {
 				return err
 			}
