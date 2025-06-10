@@ -43,7 +43,7 @@ func main() {
 	}
 
 	var log logger.Logger = logger.NewLogrusLogger()
-	log.SetLevel(cfg.LogLevel)
+	log.SetLevel(logger.LevelInfo)
 
 	jiraClient := jira.NewClient(
 		jira.WithConfig(cfg.Jira),
