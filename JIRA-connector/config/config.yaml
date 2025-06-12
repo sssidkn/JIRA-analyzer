@@ -2,9 +2,10 @@ Jira:
   BaseURL: https://issues.apache.org/jira
   VersionAPI: /rest/api/2
   MaxConnections: 10
-  MaxProcesses: 30
-  RetryCount: 1
-  MaxResults: 100
+  MaxProcesses: 50
+  StartTimeout: 5
+  MaxTimeout: 5000
+  MaxResults: 50
 Postgres:
   Host: localhost
   Port: 5434

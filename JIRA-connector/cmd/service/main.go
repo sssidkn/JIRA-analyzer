@@ -7,43 +7,26 @@ import (
 	"jira-connector/internal/jira"
 	"jira-connector/internal/repository"
 	connector "jira-connector/internal/service"
-	"jira-connector/internal/transport/grpc/server"
-	connectorApi "jira-connector/pkg/api/connector"
+	grpcSrv "jira-connector/internal/transport/grpc/server"
+	httpSrv "jira-connector/internal/transport/http/server"
 	"jira-connector/pkg/db/postgres"
 	"jira-connector/pkg/logger"
-	"net"
-	"net/http"
-	"sync"
-
-	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
+	"os"
+	"os/signal"
+	"syscall"
 )
 
-func runGRPCGateway(cfg config.Config) error {
-	ctx := context.Background()
-	ctx, cancel := context.WithCancel(ctx)
+func main() {
+	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	mux := runtime.NewServeMux()
-	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
-
-	err := connectorApi.RegisterJiraConnectorHandlerFromEndpoint(ctx, mux, fmt.Sprintf("%s:%d", cfg.Host, cfg.PortGRPC), opts)
-	if err != nil {
-		return err
-	}
-
-	return http.ListenAndServe(fmt.Sprintf("%s:%d", cfg.Host, cfg.PortHTTP), mux)
-}
-
-func main() {
 	cfg, err := config.New()
 	if err != nil {
 		panic(err)
 	}
 
 	var log logger.Logger = logger.NewLogrusLogger()
-	log.SetLevel(logger.LevelInfo)
+	log.SetLevel(cfg.LogLevel)
 
 	jiraClient := jira.NewClient(
 		jira.WithConfig(cfg.Jira),
@@ -68,29 +51,36 @@ func main() {
 		panic(err)
 	}
 
-	grpcServer := grpc.NewServer()
-	connectorApi.RegisterJiraConnectorServer(grpcServer, server.NewGRPCServer(jc))
+	grpcServer := grpcSrv.NewGRPCServer(
+		grpcSrv.WithService(jc),
+		grpcSrv.WithLogger(log),
+	)
 
-	lis, err := net.Listen("tcp", fmt.Sprintf("%s:%d", cfg.Host, cfg.PortGRPC))
+	err = grpcServer.Start(fmt.Sprintf("%s:%d", cfg.Host, cfg.PortGRPC))
 	if err != nil {
-		log.Error(fmt.Sprintf("failed to listen: %v", err))
+		panic(err)
 	}
+	defer grpcServer.Stop()
 
-	wg := sync.WaitGroup{}
-	wg.Add(2)
-	go func() {
-		defer wg.Done()
-		if err := grpcServer.Serve(lis); err != nil {
-			log.Error(fmt.Sprintf("failed to serve: %v", err))
-		}
-	}()
+	httpServer := httpSrv.NewHTTPServer(
+		httpSrv.WithService(jc),
+		httpSrv.WithLogger(log),
+		httpSrv.WithGRPCAddress(fmt.Sprintf("%s:%d", cfg.Host, cfg.PortGRPC)),
+	)
 
-	go func() {
-		defer wg.Done()
-		if err := runGRPCGateway(*cfg); err != nil {
-			log.Error(fmt.Sprintf("failed to serve: %v", err))
-		}
-	}()
+	err = httpServer.Start(fmt.Sprintf("%s:%d", cfg.Host, cfg.PortHTTP))
+	if err != nil {
+		panic(err)
+	}
+	defer httpServer.Stop()
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
-	wg.Wait()
+	select {
+	case <-sigChan:
+		log.Info("Received termination signal, shutting down...")
+		cancel()
+	case <-ctx.Done():
+		log.Info("Context cancelled, shutting down...")
+	}
 }

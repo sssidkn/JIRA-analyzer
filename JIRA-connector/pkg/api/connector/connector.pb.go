@@ -121,8 +121,8 @@ func (x *UpdateProjectResponse) GetSuccess() bool {
 type GetProjectsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ProjectKeys   []string               `protobuf:"bytes,1,rep,name=project_keys,json=projectKeys,proto3" json:"project_keys,omitempty"`
-	Page          int32                  `protobuf:"varint,2,opt,name=page,proto3" json:"page,omitempty"`
-	PageSize      int32                  `protobuf:"varint,3,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	Page          int64                  `protobuf:"varint,2,opt,name=page,proto3" json:"page,omitempty"`
+	Limit         int64                  `protobuf:"varint,3,opt,name=limit,proto3" json:"limit,omitempty"`
 	Search        string                 `protobuf:"bytes,4,opt,name=search,proto3" json:"search,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -165,16 +165,16 @@ func (x *GetProjectsRequest) GetProjectKeys() []string {
 	return nil
 }
 
-func (x *GetProjectsRequest) GetPage() int32 {
+func (x *GetProjectsRequest) GetPage() int64 {
 	if x != nil {
 		return x.Page
 	}
 	return 0
 }
 
-func (x *GetProjectsRequest) GetPageSize() int32 {
+func (x *GetProjectsRequest) GetLimit() int64 {
 	if x != nil {
-		return x.PageSize
+		return x.Limit
 	}
 	return 0
 }
@@ -240,9 +240,8 @@ func (x *GetProjectsResponse) GetPageInfo() *PageInfo {
 
 type PageInfo struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	PageCount     int32                  `protobuf:"varint,1,opt,name=page_count,json=pageCount,proto3" json:"page_count,omitempty"`
-	CurrentPage   int32                  `protobuf:"varint,2,opt,name=current_page,json=currentPage,proto3" json:"current_page,omitempty"`
-	ProjectsCount int32                  `protobuf:"varint,3,opt,name=projects_count,json=projectsCount,proto3" json:"projects_count,omitempty"`
+	PageCount     int64                  `protobuf:"varint,1,opt,name=page_count,json=pageCount,proto3" json:"page_count,omitempty"`
+	ProjectsCount int64                  `protobuf:"varint,2,opt,name=projects_count,json=projectsCount,proto3" json:"projects_count,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -277,21 +276,14 @@ func (*PageInfo) Descriptor() ([]byte, []int) {
 	return file_connector_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *PageInfo) GetPageCount() int32 {
+func (x *PageInfo) GetPageCount() int64 {
 	if x != nil {
 		return x.PageCount
 	}
 	return 0
 }
 
-func (x *PageInfo) GetCurrentPage() int32 {
-	if x != nil {
-		return x.CurrentPage
-	}
-	return 0
-}
-
-func (x *PageInfo) GetProjectsCount() int32 {
+func (x *PageInfo) GetProjectsCount() int64 {
 	if x != nil {
 		return x.ProjectsCount
 	}
@@ -300,7 +292,7 @@ func (x *PageInfo) GetProjectsCount() int32 {
 
 type JiraProject struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Url           string                 `protobuf:"bytes,1,opt,name=url,proto3" json:"url,omitempty"`
 	Key           string                 `protobuf:"bytes,2,opt,name=key,proto3" json:"key,omitempty"`
 	Name          string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -337,9 +329,9 @@ func (*JiraProject) Descriptor() ([]byte, []int) {
 	return file_connector_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *JiraProject) GetId() string {
+func (x *JiraProject) GetUrl() string {
 	if x != nil {
-		return x.Id
+		return x.Url
 	}
 	return ""
 }
@@ -368,22 +360,21 @@ const file_connector_proto_rawDesc = "" +
 	"projectKey\"]\n" +
 	"\x15UpdateProjectResponse\x12*\n" +
 	"\aproject\x18\x01 \x01(\v2\x10.api.JiraProjectR\aproject\x12\x18\n" +
-	"\asuccess\x18\x02 \x01(\bR\asuccess\"\x80\x01\n" +
+	"\asuccess\x18\x02 \x01(\bR\asuccess\"y\n" +
 	"\x12GetProjectsRequest\x12!\n" +
 	"\fproject_keys\x18\x01 \x03(\tR\vprojectKeys\x12\x12\n" +
-	"\x04page\x18\x02 \x01(\x05R\x04page\x12\x1b\n" +
-	"\tpage_size\x18\x03 \x01(\x05R\bpageSize\x12\x16\n" +
+	"\x04page\x18\x02 \x01(\x03R\x04page\x12\x14\n" +
+	"\x05limit\x18\x03 \x01(\x03R\x05limit\x12\x16\n" +
 	"\x06search\x18\x04 \x01(\tR\x06search\"o\n" +
 	"\x13GetProjectsResponse\x12,\n" +
 	"\bprojects\x18\x01 \x03(\v2\x10.api.JiraProjectR\bprojects\x12*\n" +
-	"\tpage_info\x18\x02 \x01(\v2\r.api.PageInfoR\bpageInfo\"s\n" +
+	"\tpage_info\x18\x02 \x01(\v2\r.api.PageInfoR\bpageInfo\"P\n" +
 	"\bPageInfo\x12\x1d\n" +
 	"\n" +
-	"page_count\x18\x01 \x01(\x05R\tpageCount\x12!\n" +
-	"\fcurrent_page\x18\x02 \x01(\x05R\vcurrentPage\x12%\n" +
-	"\x0eprojects_count\x18\x03 \x01(\x05R\rprojectsCount\"C\n" +
-	"\vJiraProject\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\x12\x10\n" +
+	"page_count\x18\x01 \x01(\x03R\tpageCount\x12%\n" +
+	"\x0eprojects_count\x18\x02 \x01(\x03R\rprojectsCount\"E\n" +
+	"\vJiraProject\x12\x10\n" +
+	"\x03url\x18\x01 \x01(\tR\x03url\x12\x10\n" +
 	"\x03key\x18\x02 \x01(\tR\x03key\x12\x12\n" +
 	"\x04name\x18\x03 \x01(\tR\x04name2\xe9\x01\n" +
 	"\rJiraConnector\x12r\n" +

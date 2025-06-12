@@ -9,7 +9,6 @@ import (
 	"jira-connector/pkg/logger"
 	"net/http"
 	"net/url"
-	"strings"
 	"time"
 )
 
@@ -112,26 +111,5 @@ func (c *Client) GetProjects(ctx context.Context, limit, page int, search string
 		return nil, err
 	}
 
-	var projects []models.ProjectInfo
-
-	projectsCount := 0
-
-	for _, project := range jiraProjects {
-		if strings.Contains(strings.ToLower(project.Name), strings.ToLower(search)) {
-			projectsCount++
-			projects = append(projects, models.ProjectInfo{
-				ID:   project.ID,
-				Name: project.Name,
-				Key:  project.Key,
-			})
-		}
-	}
-
-	startIndex := limit * (page - 1)
-	endIndex := startIndex + limit
-	if endIndex >= len(projects) {
-		endIndex = len(projects)
-	}
-
-	return projects, nil
+	return jiraProjects, nil
 }

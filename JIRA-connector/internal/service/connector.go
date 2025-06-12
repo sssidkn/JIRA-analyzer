@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"jira-connector/internal/models"
+	connectorApi "jira-connector/pkg/api/connector"
 	"jira-connector/pkg/logger"
+	"strings"
 	"time"
 )
 
@@ -72,12 +74,43 @@ func WithAPIClient(apiClient APIClient) Option {
 	}
 }
 
-func (jc *JiraConnector) GetProjects(ctx context.Context, limit, page int, search string) ([]models.ProjectInfo, error) {
+func (jc *JiraConnector) GetProjects(ctx context.Context, limit, page int, search string) (*connectorApi.GetProjectsResponse, error) {
 	projects, err := jc.apiClient.GetProjects(ctx, limit, page, search)
 	if err != nil {
 		return nil, err
 	}
-	return projects, nil
+	p := make([]*connectorApi.JiraProject, 0)
+	for _, project := range projects {
+		if strings.Contains(strings.ToLower(project.Name), strings.ToLower(search)) {
+			p = append(p, &connectorApi.JiraProject{
+				Url:  project.Self,
+				Key:  project.Key,
+				Name: project.Name,
+			})
+		}
+	}
+	if limit == 0 {
+		return nil, fmt.Errorf("limit cannot be zero")
+	}
+	startIndex := (page - 1) * limit
+	endIndex := page * limit
+	if endIndex > len(projects) {
+		endIndex = len(projects)
+	}
+	projectsCount := len(p)
+	pageCount := projectsCount / limit
+	if projectsCount%limit != 0 {
+		pageCount++
+	}
+	if len(p) != 0 {
+		p = p[startIndex:min(endIndex, projectsCount)]
+	}
+	return &connectorApi.GetProjectsResponse{
+		Projects: p,
+		PageInfo: &connectorApi.PageInfo{
+			PageCount:     int64(pageCount),
+			ProjectsCount: int64(projectsCount),
+		}}, nil
 }
 
 func (jc *JiraConnector) UpdateProject(ctx context.Context, projectKey string) (*Project, error) {
