@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"syscall"
 
+	_ "github.com/sssidkn/JIRA-analyzer/docs"
 	"github.com/sssidkn/JIRA-analyzer/internal/config"
 	"github.com/sssidkn/JIRA-analyzer/internal/repository"
 	"github.com/sssidkn/JIRA-analyzer/internal/server"
@@ -15,6 +16,14 @@ import (
 	"github.com/sssidkn/JIRA-analyzer/pkg/logger"
 	"github.com/sssidkn/JIRA-analyzer/pkg/postgres"
 )
+
+// @title Resources Swagger API
+// @version 1.0
+// @description Swagger API for Golang Project Blueprint.
+// @termsOfService http://swagger.io/terms/
+
+// @license.name MIT
+// @BasePath /api/v1
 
 func main() {
 	ctx, stop := signal.NotifyContext(context.Background(),

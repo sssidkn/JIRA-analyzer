@@ -11,6 +11,16 @@ import (
 	"github.com/sssidkn/JIRA-analyzer/internal/repository"
 )
 
+// getProjects godoc
+// @Summary Получить список проектов
+// @Description Возвращает список проектов с пагинацией
+// @Tags Projects
+// @Produce json
+// @Param limit query int false "Лимит записей (по умолчанию 20)"
+// @Param offset query int false "Смещение (по умолчанию 0)"
+// @Success 200 {object} models.PaginatedResponse
+// @Failure 500 {string} string "Внутренняя ошибка сервера"
+// @Router /api/v1/projects [get]
 func (s *Server) getProjects(c *gin.Context) {
 	limit, err := strconv.Atoi(c.Query("limit"))
 	if err != nil {
@@ -31,6 +41,17 @@ func (s *Server) getProjects(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
+// getProject godoc
+// @Summary Получить проект по ID
+// @Description Возвращает проект по указанному идентификатору
+// @Tags Projects
+// @Produce json
+// @Param id path int true "ID проекта"
+// @Success 200 {object} models.Response
+// @Failure 400 {string} string "Неверный ID проекта"
+// @Failure 404 {string} string "Проект не найден"
+// @Failure 500 {string} string "Внутренняя ошибка сервера"
+// @Router /api/v1/projects/{id} [get]
 func (s *Server) getProject(c *gin.Context) {
 	id, err := strconv.Atoi(c.Params.ByName("id"))
 	if err != nil {
@@ -52,6 +73,16 @@ func (s *Server) getProject(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
+// deleteProject godoc
+// @Summary Удалить проект
+// @Description Удаляет проект по указанному идентификатору
+// @Tags Projects
+// @Param id path int true "ID проекта"
+// @Success 204 "Проект успешно удален"
+// @Failure 400 {string} string "Неверный ID проекта"
+// @Failure 404 {string} string "Проект не найден"
+// @Failure 500 {string} string "Внутренняя ошибка сервера"
+// @Router /api/v1/projects/{id} [delete]
 func (s *Server) deleteProject(c *gin.Context) {
 	id, err := strconv.Atoi(c.Params.ByName("id"))
 	if err != nil {
@@ -71,6 +102,17 @@ func (s *Server) deleteProject(c *gin.Context) {
 	c.Writer.WriteHeader(http.StatusNoContent)
 }
 
+// getIssue godoc
+// @Summary Получить задачу по ID
+// @Description Возвращает задачу по указанному идентификатору
+// @Tags Issues
+// @Produce json
+// @Param id path int true "ID задачи"
+// @Success 200 {object} models.Response
+// @Failure 400 {string} string "Неверный ID задачи"
+// @Failure 404 {string} string "Задача не найдена"
+// @Failure 500 {string} string "Внутренняя ошибка сервера"
+// @Router /api/v1/issues/{id} [get]
 func (s *Server) getIssue(c *gin.Context) {
 	id, err := strconv.Atoi(c.Params.ByName("id"))
 	if err != nil {
@@ -91,6 +133,19 @@ func (s *Server) getIssue(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
+// getIssuesByProject godoc
+// @Summary Получить задачи проекта
+// @Description Возвращает список задач для указанного проекта с пагинацией
+// @Tags Issues
+// @Produce json
+// @Param projectId path int true "ID проекта"
+// @Param limit query int false "Лимит записей (по умолчанию 20)"
+// @Param offset query int false "Смещение (по умолчанию 0)"
+// @Success 200 {object} models.PaginatedResponse
+// @Failure 400 {string} string "Неверные параметры запроса"
+// @Failure 404 {string} string "Проект не найден"
+// @Failure 500 {string} string "Внутренняя ошибка сервера"
+// @Router /api/v1//issues/by-project/{projectId} [get]
 func (s *Server) getIssuesByProject(c *gin.Context) {
 	projectId, err := strconv.Atoi(c.Params.ByName("projectId"))
 	if err != nil {
@@ -119,6 +174,17 @@ func (s *Server) getIssuesByProject(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
+// getHistoryByIssue godoc
+// @Summary Получить историю изменений задачи
+// @Description Возвращает историю изменений для указанной задачи
+// @Tags History
+// @Produce json
+// @Param issueId path int true "ID задачи"
+// @Success 200 {object} models.Response
+// @Failure 400 {string} string "Неверный ID задачи"
+// @Failure 404 {string} string "Задача не найдена"
+// @Failure 500 {string} string "Внутренняя ошибка сервера"
+// @Router /api/v1//histories/by-issue/{issueId} [get]
 func (s *Server) getHistoryByIssue(c *gin.Context) {
 	issueId, err := strconv.Atoi(c.Params.ByName("issueId"))
 	if err != nil {
@@ -138,6 +204,17 @@ func (s *Server) getHistoryByIssue(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
+// getHistoryByAuthor godoc
+// @Summary Получить историю изменений автора
+// @Description Возвращает историю изменений, сделанных указанным автором
+// @Tags History
+// @Produce json
+// @Param authorId path int true "ID автора"
+// @Success 200 {object} models.Response
+// @Failure 400 {string} string "Неверный ID автора"
+// @Failure 404 {string} string "Автор не найден"
+// @Failure 500 {string} string "Внутренняя ошибка сервера"
+// @Router /api/v1/histories/by-author/{authorId} [get]
 func (s *Server) getHistoryByAuthor(c *gin.Context) {
 	authorId, err := strconv.Atoi(c.Params.ByName("authorId"))
 	if err != nil {

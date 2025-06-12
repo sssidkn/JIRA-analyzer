@@ -2,12 +2,14 @@ package models
 
 import "time"
 
+// Project main info about project
 type Project struct {
 	Id   int    `json:"id"`
 	Key  string `json:"key"`
 	Name string `json:"name"`
 }
 
+// ProjectInfo full info about project
 type ProjectInfo struct {
 	Id                  int     `json:"id"`
 	Key                 string  `json:"key"`
@@ -22,6 +24,7 @@ type ProjectInfo struct {
 	AverageIssuesCount  float64 `json:"averageIssuesCount"`
 }
 
+// Issue main info about issue
 type Issue struct {
 	Id        int    `json:"id"`
 	ProjectId int    `json:"projectId"`
@@ -29,6 +32,7 @@ type Issue struct {
 	Type      string `json:"type"`
 }
 
+// IssueInfo full info about issue
 type IssueInfo struct {
 	Id                int       `json:"id"`
 	ProjectId         int       `json:"projectId"`
@@ -48,6 +52,7 @@ type IssueInfo struct {
 	ChangeStatusCount int       `json:"change_status_count"`
 }
 
+// History status change info about issue
 type History struct {
 	IssueId    int       `json:"issueId"`
 	AuthorId   int       `json:"authorId"`
@@ -60,6 +65,7 @@ type Link struct {
 	URL string `json:"href"`
 }
 
+// ReferencesLinks all links
 type ReferencesLinks struct {
 	LinkSelf      Link   `json:"self"`
 	LinkIssues    []Link `json:"issues"`
@@ -67,17 +73,20 @@ type ReferencesLinks struct {
 	LinkHistories []Link `json:"histories"`
 }
 
+// Response links and data
 type Response struct {
 	Links ReferencesLinks `json:"_links"`
 	Data  interface{}     `json:"data"`
 }
 
+// Pagination info about pages
 type Pagination struct {
 	CurrentPage int `json:"currentPage"`
 	PageCount   int `json:"pageCount"`
 	Total       int `json:"total"`
 }
 
+// PaginatedResponse links, data and pagination info
 type PaginatedResponse struct {
 	Links    ReferencesLinks `json:"_links"`
 	Data     interface{}     `json:"data"`
