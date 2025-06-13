@@ -43,6 +43,7 @@ func (s *service) MakeTask(ctx context.Context, task int, key string) (interface
 	response, err := s.client.UpdateProject(ctx, &connectorApi.UpdateProjectRequest{ProjectKey: key})
 	if err != nil {
 		s.log.Error(fmt.Errorf("failed to update project %s: %w", key, err))
+		return nil, err
 	}
 	if response.Success {
 		s.log.Info(fmt.Sprintf("updated project %s", key))

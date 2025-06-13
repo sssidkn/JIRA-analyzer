@@ -1,5 +1,5 @@
 port: 8084
-grpcServer: localhost:50051
+grpcServer: localhost:9090
 analyticsTimeout: 15s
 postgres:
   dbUser: pguser
