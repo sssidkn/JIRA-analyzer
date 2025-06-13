@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/sssidkn/JIRA-analyzer/internal/repository"
+	"github.com/sssidkn/JIRA-analyzer/pkg/api/connectorApi"
 	"github.com/sssidkn/JIRA-analyzer/pkg/logger"
 )
 
@@ -22,10 +23,11 @@ type service struct {
 	repo     repository.Repository
 	log      logger.Logger
 	handlers map[int]TaskHandler
+	client   connectorApi.JiraConnectorClient
 }
 
-func New(repo repository.Repository, log logger.Logger) *service {
-	s := &service{repo: repo, log: log, handlers: make(map[int]TaskHandler)}
+func New(repo repository.Repository, log logger.Logger, client connectorApi.JiraConnectorClient) *service {
+	s := &service{repo: repo, log: log, handlers: make(map[int]TaskHandler), client: client}
 	s.handlers[1] = s.makeTaskOne // time in the open state
 	s.handlers[2] = s.makeTaskTwo //number of tasks by priority level
 	s.handlers[3] = s.getTaskOne
@@ -38,6 +40,13 @@ func New(repo repository.Repository, log logger.Logger) *service {
 type TaskHandler func(ctx context.Context, param string) (interface{}, error)
 
 func (s *service) MakeTask(ctx context.Context, task int, key string) (interface{}, error) {
+	response, err := s.client.UpdateProject(ctx, &connectorApi.UpdateProjectRequest{ProjectKey: key})
+	if err != nil {
+		s.log.Error(fmt.Errorf("failed to update project %s: %w", key, err))
+	}
+	if response.Success {
+		s.log.Info(fmt.Sprintf("updated project %s", key))
+	}
 	if hand, exists := s.handlers[task]; exists {
 		return hand(ctx, key)
 	}
@@ -45,6 +54,9 @@ func (s *service) MakeTask(ctx context.Context, task int, key string) (interface
 }
 
 func (s *service) makeTaskOne(ctx context.Context, key string) (interface{}, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
 	issues, err := s.repo.MakeTaskOne(ctx, key)
 	if err != nil {
 		if !errors.Is(err, repository.ErrAlreadyExist) {
@@ -63,6 +75,9 @@ func (s *service) makeTaskOne(ctx context.Context, key string) (interface{}, err
 
 // other type of priority?
 func (s *service) makeTaskTwo(ctx context.Context, key string) (interface{}, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
 	issues, err := s.repo.MakeTaskTwo(ctx, key)
 	if err != nil {
 		if !errors.Is(err, repository.ErrAlreadyExist) {
@@ -104,7 +119,6 @@ func (s *service) getTaskTwo(ctx context.Context, key string) (interface{}, erro
 	return issues, nil
 }
 
-// Error if no data???
 func (s *service) DeleteTasks(ctx context.Context, key string) (bool, error) {
 	ok, err := s.repo.DeleteTasks(ctx, key)
 	if err != nil {

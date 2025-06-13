@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -77,6 +78,10 @@ func (s *Server) Shutdown(ctx context.Context) error {
 func timeoutMiddleware(timeout time.Duration) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(c.Request.Context(), timeout)
+		isMake := strings.Contains(c.Request.RequestURI, "make")
+		if isMake {
+			ctx, cancel = context.WithTimeout(c.Request.Context(), 30*time.Second)
+		}
 		defer cancel()
 
 		c.Request = c.Request.WithContext(ctx)

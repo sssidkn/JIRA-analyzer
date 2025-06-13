@@ -11,6 +11,7 @@ import (
 type Config struct {
 	Port             int             `yaml:"port" default:"8084"`
 	AnalyticsTimeout time.Duration   `yaml:"analyticsTimeout" default:"15s"`
+	GrpcServer       string          `yaml:"grpcServer"`
 	Postgres         postgres.Config `yaml:"postgres"`
 }
 

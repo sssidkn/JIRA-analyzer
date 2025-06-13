@@ -66,6 +66,7 @@ func (s *Server) makeGraph(c *gin.Context) {
 		c.String(http.StatusBadRequest, "no key")
 		return
 	}
+
 	ctx := c.Request.Context()
 	issues, err := s.service.MakeTask(ctx, task, key)
 	if err != nil {

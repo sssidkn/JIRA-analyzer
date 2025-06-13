@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -13,8 +14,11 @@ import (
 	"github.com/sssidkn/JIRA-analyzer/internal/repository"
 	"github.com/sssidkn/JIRA-analyzer/internal/server"
 	"github.com/sssidkn/JIRA-analyzer/internal/service"
+	pb "github.com/sssidkn/JIRA-analyzer/pkg/api/connectorApi"
 	"github.com/sssidkn/JIRA-analyzer/pkg/logger"
 	"github.com/sssidkn/JIRA-analyzer/pkg/postgres"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 // @title Analytics Swagger API
@@ -55,7 +59,17 @@ func main() {
 	lg.Debug("successful connection to postgres")
 
 	rp := repository.New(pg)
-	sv := service.New(rp, *lg)
+
+	conn, err := grpc.NewClient(
+		cfg.GrpcServer,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+	if err != nil {
+		lg.Error(fmt.Errorf("failed to create grpc client: %w", err))
+	}
+	client := pb.NewJiraConnectorClient(conn)
+
+	sv := service.New(rp, *lg, client)
 	server := server.New(sv, lg, cfg.AnalyticsTimeout)
 
 	go func() {
@@ -70,4 +84,5 @@ func main() {
 	server.Shutdown(ctx)
 	lg.Info("Server shut down")
 	defer pg.Close(context.Background())
+	defer conn.Close()
 }
