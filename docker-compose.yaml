@@ -33,7 +33,7 @@ services:
           memory: 1G
           cpus: '0.5'
 
-  jira-connector:
+  connector:
     build:
       context: ./jira-connector
       dockerfile: Dockerfile
@@ -74,7 +74,7 @@ services:
 
   resources:
     build:
-      context: ./analytics
+      context: ./resources
       dockerfile: Dockerfile
     expose:
       - "8085:8085"
@@ -82,5 +82,14 @@ services:
       db:
         condition: service_healthy
 
+  gateway:
+    build: ./gateway
+    container_name: gateway
+    ports:
+      - "8080:8080"
+    depends_on:
+      - resources
+      - analytics
+      - connector
 volumes:
   serverDB:
