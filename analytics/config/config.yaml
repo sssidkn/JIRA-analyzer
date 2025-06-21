@@ -1,9 +1,9 @@
 port: 8084
-grpcServer: localhost:9090
+grpcServer: connector:9090
 analyticsTimeout: 15s
 postgres:
   dbUser: pguser
   dbPassword: pgpwd
-  dbHost: localhost
-  dbPort: 5434
+  dbHost: db
+  dbPort: 5432
   dbName: testdb

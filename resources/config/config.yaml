@@ -3,6 +3,6 @@ resourceTimeout: 5s
 postgres:
   dbUser: pguser
   dbPassword: pgpwd
-  dbHost: localhost
-  dbPort: 5434
+  dbHost: db
+  dbPort: 5432
   dbName: testdb
