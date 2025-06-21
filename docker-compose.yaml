@@ -62,5 +62,25 @@ services:
       db:
         condition: service_healthy
 
+  analytics:
+    build:
+      context: ./analytics
+      dockerfile: Dockerfile
+    expose:
+      - "8084:8084"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  resources:
+    build:
+      context: ./analytics
+      dockerfile: Dockerfile
+    expose:
+      - "8085:8085"
+    depends_on:
+      db:
+        condition: service_healthy
+
 volumes:
   serverDB:

@@ -1,0 +1,303 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "Swagger API for Golang Project Blueprint.",
+        "title": "Analytics Swagger API",
+        "termsOfService": "http://swagger.io/terms/",
+        "contact": {},
+        "license": {
+            "name": "MIT"
+        },
+        "version": "1.0"
+    },
+    "basePath": "/api/v1",
+    "paths": {
+        "/api/v1/compare/{taskNumber}": {
+            "get": {
+                "description": "Retrieves comparison data for the specified task across projects",
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Compare analytical data for a task",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Task number to compare",
+                        "name": "taskNumber",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Comma-separated project keys to compare",
+                        "name": "project",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Данные для задачи типа 2",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ComparisonTaskTwo"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid task number or missing project keys",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Task or projects not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/graph/delete": {
+            "delete": {
+                "description": "Removes all analytical graph data associated with the specified project",
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Delete all graph data for a project",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Project key identifier",
+                        "name": "project",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "True if deletion was successful",
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    "400": {
+                        "description": "Missing project key",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/graph/get/{taskNumber}": {
+            "get": {
+                "description": "Retrieves graph data for the specified task number and project key",
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Get analytical data for a specific task",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Task number to retrieve graph for",
+                        "name": "taskNumber",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Project key identifier",
+                        "name": "project",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Данные для задачи типа 2",
+                        "schema": {
+                            "$ref": "#/definitions/dto.IssueTaskTwo"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid task number or missing project key",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Task or project not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/graph/make/{taskNumber}": {
+            "post": {
+                "description": "Creates and returns analytical graph data for the specified task",
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Generate analytical data for a task",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Task number to generate graph for",
+                        "name": "taskNumber",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Project key identifier",
+                        "name": "project",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Данные для задачи типа 2",
+                        "schema": {
+                            "$ref": "#/definitions/dto.IssueTaskTwo"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid task number or missing project key",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Task or project not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/isAnalyzed": {
+            "get": {
+                "description": "Verifies whether analytical data exists for the specified project",
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Check if project has been analyzed",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Project key identifier",
+                        "name": "project",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "True if project has been analyzed",
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    "400": {
+                        "description": "Missing project key",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Project not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "dto.ComparisonTaskOne": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.IssueTaskOne"
+                    }
+                },
+                "key": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.ComparisonTaskTwo": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.IssueTaskTwo"
+                    }
+                },
+                "key": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.IssueTaskOne": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer"
+                },
+                "time": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.IssueTaskTwo": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer"
+                },
+                "priority": {
+                    "type": "string"
+                }
+            }
+        }
+    }
+}
