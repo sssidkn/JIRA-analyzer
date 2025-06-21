@@ -1,0 +1,15 @@
+Jira:
+  BaseURL: https://issues.apache.org/jira/rest/api/2
+  MaxConnections: 1
+  RetryCount: 1
+  MaxResults: 50
+Postgres:
+  Host: localhost
+  Port: 5434
+  User: pguser
+  Password: pgpwd
+  Database: testdb
+  PoolSize: 10
+Host: localhost
+PortHTTP: 8081
+PortGRPC: 9090

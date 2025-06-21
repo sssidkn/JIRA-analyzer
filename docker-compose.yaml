@@ -33,6 +33,32 @@ services:
           memory: 1G
           cpus: '0.5'
 
+  jira-connector:
+    build:
+      context: ./jira-connector
+      dockerfile: Dockerfile
+    ports:
+      - "9090:9090"
+      - "8081:8081"
+    environment:
+      - ENV=PRODUCTION
+      - POSTGRES_HOST=db
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=pguser
+      - POSTGRES_PASSWORD=pgpwd
+      - POSTGRES_DB=testdb
+      - POSTGRES_POOL_SIZE=10
+      - BASE_URL=https://issues.apache.org/jira/rest/api/2
+      - MAX_CONNECTIONS=20
+      - RETRY_COUNT=1
+      - MAX_RESULTS=50
+      - GRPC_PORT=9090
+      - HTTP_PORT=8081
+      - HOST=0.0.0.0
+    depends_on:
+      db:
+        condition: service_healthy
+
   analytics:
     build:
       context: ./analytics

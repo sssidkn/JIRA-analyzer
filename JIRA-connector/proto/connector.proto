@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+package api;
+
+option go_package = "pkg/api/connectorApi";
+import "google/api/annotations.proto";
+
+service JiraConnector {
+  rpc UpdateProject (UpdateProjectRequest) returns (UpdateProjectResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/connector/updateProject"
+      body: "*"
+    };
+  }
+
+  rpc GetProjects (GetProjectsRequest) returns (GetProjectsResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/connector/projects"
+    };
+  }
+}
+
+message UpdateProjectRequest {
+  string project_key = 1;
+}
+
+message UpdateProjectResponse {
+  JiraProject project = 1;
+  bool success = 2;
+}
+
+message GetProjectsRequest {
+  repeated string project_keys = 1;
+  int32 page = 2;
+  int32 page_size = 3;
+  string search = 4;
+}
+
+message GetProjectsResponse {
+  repeated JiraProject projects = 1;
+  PageInfo page_info = 2;
+}
+
+message PageInfo {
+  int32 page_count = 1;
+  int32 current_page = 2;
+  int32 projects_count = 3;
+}
+
+message JiraProject {
+  string id = 1;
+  string key = 2;
+  string name = 3;
+}
