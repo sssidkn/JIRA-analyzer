@@ -28,10 +28,10 @@ func (c *Client) GetProject(ctx context.Context, projectKey string) (*models.Jir
 	}
 
 	resp, err := c.httpClient.Do(req)
+	defer resp.Body.Close()
 	if err != nil {
 		return nil, fmt.Errorf("failed to send request: %w", err)
 	}
-	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
@@ -43,7 +43,7 @@ func (c *Client) GetProject(ctx context.Context, projectKey string) (*models.Jir
 	if err = json.NewDecoder(resp.Body).Decode(&project); err != nil {
 		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}
-
+	project.Self = c.config.BaseURL + "/projects/" + project.Key
 	total, err := c.getTotalIssuesCount(ctx, projectKey)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get total issues count: %w", err)
@@ -95,10 +95,10 @@ func (c *Client) UpdateProject(ctx context.Context, projectKey string, lastUpdat
 func (c *Client) GetProjects(ctx context.Context, limit, page int, search string) ([]models.ProjectInfo, error) {
 	c.logger.Info("starting getting projects")
 	response, err := http.Get(c.config.BaseURL + c.config.VersionAPI + "/project")
+	defer response.Body.Close()
 	if err != nil {
 		return nil, err
 	}
-
 	body, err := io.ReadAll(response.Body)
 	if err != nil {
 		return nil, err
@@ -106,7 +106,9 @@ func (c *Client) GetProjects(ctx context.Context, limit, page int, search string
 
 	var jiraProjects []models.ProjectInfo
 	err = json.Unmarshal(body, &jiraProjects)
-
+	for i := 0; i < len(jiraProjects); i++ {
+		jiraProjects[i].Self = c.config.BaseURL + "/projects/" + jiraProjects[i].Key
+	}
 	if err != nil {
 		return nil, err
 	}

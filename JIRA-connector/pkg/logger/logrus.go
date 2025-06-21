@@ -1,6 +1,7 @@
 package logger
 
 import (
+	"os"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -19,23 +20,70 @@ func NewLogrusLogger() *LogrusLogger {
 		DisableSorting:  false,
 		PadLevelText:    true,
 	})
+
+	log.SetOutput(os.Stdout)
+
+	fileAllLogs, err := os.OpenFile("logs.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err != nil {
+		log.Fatal("Can't open logs.log:", err)
+	}
+
+	fileErrLogs, err := os.OpenFile("err_logs.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err != nil {
+		log.Fatal("Can't open err_logs.log:", err)
+	}
+
+	log.AddHook(&fileHook{
+		fileAll:  fileAllLogs,
+		fileWarn: fileErrLogs,
+	})
+
 	return &LogrusLogger{logger: log}
 }
 
-func (l *LogrusLogger) Info(msg string, fileds ...Field) {
-	l.logger.WithFields(toLogrusFields(fileds)).Info(msg)
+type fileHook struct {
+	fileAll  *os.File
+	fileWarn *os.File
 }
 
-func (l *LogrusLogger) Debug(msg string, fileds ...Field) {
-	l.logger.WithFields(toLogrusFields(fileds)).Debug(msg)
+func (h *fileHook) Levels() []logrus.Level {
+	return logrus.AllLevels
 }
 
-func (l *LogrusLogger) Warn(msg string, fileds ...Field) {
-	l.logger.WithFields(toLogrusFields(fileds)).Warn(msg)
+func (h *fileHook) Fire(entry *logrus.Entry) error {
+	line, err := entry.String()
+	if err != nil {
+		return err
+	}
+	_, err = h.fileAll.WriteString(line)
+	if err != nil {
+		return err
+	}
+
+	if entry.Level <= logrus.WarnLevel {
+		_, err = h.fileWarn.WriteString(line)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
-func (l *LogrusLogger) Error(msg string, fileds ...Field) {
-	l.logger.WithFields(toLogrusFields(fileds)).Error(msg)
+func (l *LogrusLogger) Info(msg string, fields ...Field) {
+	l.logger.WithFields(toLogrusFields(fields)).Info(msg)
+}
+
+func (l *LogrusLogger) Debug(msg string, fields ...Field) {
+	l.logger.WithFields(toLogrusFields(fields)).Debug(msg)
+}
+
+func (l *LogrusLogger) Warn(msg string, fields ...Field) {
+	l.logger.WithFields(toLogrusFields(fields)).Warn(msg)
+}
+
+func (l *LogrusLogger) Error(msg string, fields ...Field) {
+	l.logger.WithFields(toLogrusFields(fields)).Error(msg)
 }
 
 func (l *LogrusLogger) With(fields ...Field) Logger {
