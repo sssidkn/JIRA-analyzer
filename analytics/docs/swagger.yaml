@@ -1,0 +1,202 @@
+basePath: /api/v1
+definitions:
+  dto.ComparisonTaskOne:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/dto.IssueTaskOne'
+        type: array
+      key:
+        type: string
+    type: object
+  dto.ComparisonTaskTwo:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/dto.IssueTaskTwo'
+        type: array
+      key:
+        type: string
+    type: object
+  dto.IssueTaskOne:
+    properties:
+      count:
+        type: integer
+      time:
+        type: string
+    type: object
+  dto.IssueTaskTwo:
+    properties:
+      count:
+        type: integer
+      priority:
+        type: string
+    type: object
+info:
+  contact: {}
+  description: Swagger API for Golang Project Blueprint.
+  license:
+    name: MIT
+  termsOfService: http://swagger.io/terms/
+  title: Analytics Swagger API
+  version: "1.0"
+paths:
+  /api/v1/compare/{taskNumber}:
+    get:
+      description: Retrieves comparison data for the specified task across projects
+      parameters:
+      - description: Task number to compare
+        in: path
+        name: taskNumber
+        required: true
+        type: integer
+      - description: Comma-separated project keys to compare
+        in: query
+        name: project
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Данные для задачи типа 2
+          schema:
+            $ref: '#/definitions/dto.ComparisonTaskTwo'
+        "400":
+          description: Invalid task number or missing project keys
+          schema:
+            type: string
+        "404":
+          description: Task or projects not found
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Compare analytical data for a task
+  /api/v1/graph/delete:
+    delete:
+      description: Removes all analytical graph data associated with the specified
+        project
+      parameters:
+      - description: Project key identifier
+        in: query
+        name: project
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: True if deletion was successful
+          schema:
+            type: boolean
+        "400":
+          description: Missing project key
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Delete all graph data for a project
+  /api/v1/graph/get/{taskNumber}:
+    get:
+      description: Retrieves graph data for the specified task number and project
+        key
+      parameters:
+      - description: Task number to retrieve graph for
+        in: path
+        name: taskNumber
+        required: true
+        type: integer
+      - description: Project key identifier
+        in: query
+        name: project
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Данные для задачи типа 2
+          schema:
+            $ref: '#/definitions/dto.IssueTaskTwo'
+        "400":
+          description: Invalid task number or missing project key
+          schema:
+            type: string
+        "404":
+          description: Task or project not found
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Get analytical data for a specific task
+  /api/v1/graph/make/{taskNumber}:
+    post:
+      description: Creates and returns analytical graph data for the specified task
+      parameters:
+      - description: Task number to generate graph for
+        in: path
+        name: taskNumber
+        required: true
+        type: integer
+      - description: Project key identifier
+        in: query
+        name: project
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Данные для задачи типа 2
+          schema:
+            $ref: '#/definitions/dto.IssueTaskTwo'
+        "400":
+          description: Invalid task number or missing project key
+          schema:
+            type: string
+        "404":
+          description: Task or project not found
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Generate analytical data for a task
+  /api/v1/isAnalyzed:
+    get:
+      description: Verifies whether analytical data exists for the specified project
+      parameters:
+      - description: Project key identifier
+        in: query
+        name: project
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: True if project has been analyzed
+          schema:
+            type: boolean
+        "400":
+          description: Missing project key
+          schema:
+            type: string
+        "404":
+          description: Project not found
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Check if project has been analyzed
+swagger: "2.0"
