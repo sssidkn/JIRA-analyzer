@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"jira-connector/internal/jira"
 	"jira-connector/pkg/db/postgres"
+	"jira-connector/pkg/logger"
 	"os"
 
 	"github.com/ilyakaznacheev/cleanenv"
@@ -21,6 +22,7 @@ type Config struct {
 	PortHTTP uint            `yaml:"PortHTTP" env:"PORT_HTTP"`
 	PortGRPC uint            `yaml:"PortGRPC" env:"PORT_GRPC"`
 	Host     string          `yaml:"Host" env:"HOST" envDefault:"0.0.0.0"`
+	LogLevel logger.Level
 }
 
 func New() (*Config, error) {
@@ -32,12 +34,14 @@ func New() (*Config, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to read config: %v", err)
 		}
+		cfg.LogLevel = logger.LevelDebug
 		return cfg, nil
 	case production:
 		err := cleanenv.ReadEnv(cfg)
 		if err != nil {
 			return nil, fmt.Errorf("failed to read config: %v", err)
 		}
+		cfg.LogLevel = logger.LevelInfo
 		return cfg, nil
 	default:
 		return nil, fmt.Errorf("unknown env: %s", env)

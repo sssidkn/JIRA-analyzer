@@ -1,23 +1,5 @@
 package models
 
-type JiraProject struct {
-	ID     string      `json:"id"`
-	Key    string      `json:"key"`
-	Name   string      `json:"name"`
-	Issues []JiraIssue `json:"issues"`
-}
-
-type ProjectInfo struct {
-	ID   string `json:"id"`
-	Key  string `json:"key"`
-	Name string `json:"name"`
-}
-
-type JiraUser struct {
-	AccountID   string `json:"accountId"`
-	DisplayName string `json:"displayName"`
-}
-
 type JiraIssue struct {
 	ID         string    `json:"id"`
 	Key        string    `json:"key"`
@@ -37,14 +19,14 @@ type Fields struct {
 	Status struct {
 		Name string `json:"name"`
 	} `json:"status"`
-	Creator    JiraUser `json:"creator"`
-	Assignee   JiraUser `json:"assignee"`
-	Created    string   `json:"created"`
-	Updated    string   `json:"updated"`
-	Resolution struct {
-		Date string `json:"resolutiondate"`
-	} `json:"resolution"`
-	Timespent *int `json:"timespent"`
+	Creator      JiraUser `json:"creator"`
+	Assignee     JiraUser `json:"assignee"`
+	Created      JiraTime `json:"created"`
+	Updated      JiraTime `json:"updated"`
+	Closed       JiraTime `json:"resolutiondate"`
+	Timetracking struct {
+		TimeSpentSeconds *int `json:"timeSpentSeconds"`
+	} `json:"timetracking"`
 }
 
 type Changelog struct {
@@ -52,7 +34,7 @@ type Changelog struct {
 }
 
 type History struct {
-	Created string   `json:"created"`
+	Created JiraTime `json:"created"`
 	Author  JiraUser `json:"author"`
 	Items   []Item   `json:"items"`
 }
@@ -61,4 +43,9 @@ type Item struct {
 	Field      string `json:"field"`
 	FromString string `json:"fromString"`
 	ToString   string `json:"toString"`
+}
+
+type JiraUser struct {
+	AccountID   string `json:"accountId"`
+	DisplayName string `json:"displayName"`
 }

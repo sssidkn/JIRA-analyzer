@@ -1,0 +1,170 @@
+package jira
+
+import (
+	"context"
+	"fmt"
+	"jira-connector/internal/models"
+	"jira-connector/pkg/logger"
+	"net/url"
+	"time"
+
+	"golang.org/x/sync/errgroup"
+)
+
+func (c *Client) getTotalIssuesCount(ctx context.Context, projectKey string) (int, error) {
+	jql := fmt.Sprintf("project=%s", projectKey)
+	c.logger.Info("starting getting total issues count")
+	params := url.Values{
+		"jql":        []string{jql},
+		"startAt":    []string{"0"},
+		"maxResults": []string{"0"},
+	}
+
+	var result struct {
+		Total int `json:"total"`
+	}
+
+	endpoint := c.buildURL("/search", params)
+	if err := c.doRequest(ctx, endpoint, &result); err != nil {
+		return 0, fmt.Errorf("failed to get total issues count: %w", err)
+	}
+	c.logger.Info(fmt.Sprintf("finished getting total issues count. Count: %d", result.Total))
+	return result.Total, nil
+}
+
+func (c *Client) getIssuesCountAfter(ctx context.Context, projectKey string, lastUpdate time.Time) (int, error) {
+	jql := fmt.Sprintf("project=%s AND updated > \"%s\"", projectKey,
+		lastUpdate.UTC().Format("2006/01/02"))
+
+	params := url.Values{
+		"jql":        []string{jql},
+		"maxResults": []string{"0"},
+	}
+
+	var result struct {
+		Total int `json:"total"`
+	}
+
+	endpoint := c.buildURL("/search", params)
+	err := c.doRequest(ctx, endpoint, &result)
+	if err != nil {
+		return 0, fmt.Errorf("failed to get issues count: %w", err)
+	}
+	return result.Total, nil
+}
+
+func (c *Client) getIssuesBy(ctx context.Context, total int, params url.Values) (*[]models.JiraIssue, error) {
+	pageSize := c.config.MaxResults
+	threadsCount := c.config.MaxProcesses
+
+	totalPages := (total + pageSize - 1) / pageSize
+	c.logger.Debug(fmt.Sprintf("Total pages: %d", totalPages))
+
+	pagest := make(chan int, threadsCount)
+	results := make(chan []models.JiraIssue, threadsCount)
+
+	errGroup, ctx := errgroup.WithContext(ctx)
+	errGroup.SetLimit(threadsCount + 1)
+
+	link := c.buildURL("/search", params)
+
+	errGroup.Go(func() error {
+		defer close(pagest)
+		for page := 0; page < totalPages; page++ {
+			select {
+			case pagest <- page:
+			case <-ctx.Done():
+				return ctx.Err()
+			}
+		}
+		return nil
+	})
+
+	for i := 0; i < threadsCount; i++ {
+		errGroup.Go(func() error {
+			return c.issuePageWorker(ctx, pagest, results, link)
+		})
+	}
+
+	go func() {
+		errGroup.Wait()
+		close(results)
+	}()
+
+	allIssues := make([]models.JiraIssue, 0, total)
+	for res := range results {
+		allIssues = append(allIssues, res...)
+	}
+
+	if err := errGroup.Wait(); err != nil {
+		return nil, err
+	}
+	return &allIssues, nil
+}
+
+func (c *Client) getAllIssues(ctx context.Context, projectKey string, total int) (*[]models.JiraIssue, error) {
+	pageSize := c.config.MaxResults
+
+	allIssues, err := c.getIssuesBy(ctx, total, url.Values{
+		"jql":        []string{fmt.Sprintf("project=%s", projectKey)},
+		"maxResults": []string{fmt.Sprintf("%d", pageSize)},
+		"expand":     []string{"changelog"},
+		"fields": []string{`summary,description,issuetype,priority,
+			status,creator,assignee,created,updated,resolutiondate,worklog,timetracking`},
+	})
+	if err != nil {
+		return nil, err
+	}
+	return allIssues, nil
+}
+
+func (c *Client) getIssuesPage(ctx context.Context, link string) ([]models.JiraIssue, error) {
+	var result struct {
+		Issues []models.JiraIssue `json:"issues"`
+	}
+
+	err := c.doRequest(ctx, link, &result)
+	if err != nil {
+		return nil, err
+	}
+
+	return result.Issues, nil
+}
+
+func (c *Client) issuePageWorker(ctx context.Context, pages <-chan int,
+	issuePages chan<- []models.JiraIssue, link string) error {
+
+	pageSize := c.config.MaxResults
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case page, ok := <-pages:
+			if !ok {
+				return nil
+			}
+
+			startAt := page * pageSize
+			c.logger.Debug("Processing page",
+				logger.Field{Key: "page_size", Value: pageSize},
+				logger.Field{Key: "page", Value: page})
+
+			reqCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+			issues, err := c.getIssuesPage(reqCtx, link+fmt.Sprintf("&startAt=%d", startAt))
+			cancel()
+
+			if err != nil {
+				return fmt.Errorf("failed to get issues page: %w", err)
+			}
+
+			select {
+			case issuePages <- issues:
+				c.logger.Debug("Processed page",
+					logger.Field{Key: "page_size", Value: pageSize},
+					logger.Field{Key: "page", Value: page})
+			case <-ctx.Done():
+				return ctx.Err()
+			}
+		}
+	}
+}

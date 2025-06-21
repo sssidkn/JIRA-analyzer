@@ -2,9 +2,9 @@ package repository
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"jira-connector/internal/models"
-	"strings"
+	"jira-connector/pkg/logger"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -14,7 +14,12 @@ import (
 type Project = models.JiraProject
 
 type ProjectRepository struct {
-	db *pgxpool.Pool
+	db     *pgxpool.Pool
+	logger logger.Logger
+}
+
+func (p *ProjectRepository) SetLogger(logger logger.Logger) {
+	p.logger = logger
 }
 
 func NewProjectRepository(db *pgxpool.Pool) *ProjectRepository {
@@ -23,203 +28,202 @@ func NewProjectRepository(db *pgxpool.Pool) *ProjectRepository {
 	}
 }
 
-func parseJiraTime(timeStr string) (time.Time, error) {
-	if timeStr == "" {
-		return time.Time{}, nil
-	}
-	normalized := strings.Replace(timeStr, "+0000", "Z", 1)
-	return time.Parse(time.RFC3339, normalized)
-}
-
-func (p *ProjectRepository) ProjectExists(ctx context.Context, projectKey string) (bool, error) {
+// TODO: Задачка со звездочкой
+func (p *ProjectRepository) GetProjectInfo(ctx context.Context, projectKey string) (*models.ProjectInfo, error) {
 	var exists bool
 	err := p.db.QueryRow(ctx,
-		"SELECT EXISTS(SELECT 1 FROM Projects WHERE key = $1)",
+		`SELECT 
+        EXISTS(SELECT 1 FROM Projects WHERE key = $1)`,
 		projectKey,
 	).Scan(&exists)
-
-	if err != nil {
-		return false, err
+	if !exists {
+		return nil, nil
 	}
-	return exists, nil
+	var pi = &models.ProjectInfo{}
+	err = p.db.QueryRow(ctx,
+		`SELECT id, key, title, lastUpdate FROM Projects WHERE key = $1`,
+		projectKey,
+	).Scan(&pi.ID, &pi.Key, &pi.Name, &pi.LastUpdate)
+	if err != nil {
+		return nil, err
+	}
+	return pi, nil
 }
 
 func (p *ProjectRepository) SaveProject(ctx context.Context, project Project) error {
 	tx, err := p.db.BeginTx(ctx, pgx.TxOptions{})
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
 	defer tx.Rollback(ctx)
 
-	issues := project.Issues
-
-	_, err = tx.Prepare(ctx, "save-project", `
-		INSERT INTO Projects (title, key) VALUES ($1, $2) ON CONFLICT DO NOTHING RETURNING id
-	`)
+	// 1. Сохраняем проект и получаем его ID
+	var projectID int
+	err = tx.QueryRow(ctx, `
+        INSERT INTO Projects (title, key, lastUpdate) 
+        VALUES ($1, $2, $3) 
+        ON CONFLICT (key) DO UPDATE SET lastUpdate = EXCLUDED.lastUpdate
+        RETURNING id
+    `, project.Name, project.Key, project.LastUpdate).Scan(&projectID)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to save project: %w", err)
 	}
 
-	_, err = tx.Prepare(ctx, "save-author", `
-		INSERT INTO Author (name) VALUES ($1) ON CONFLICT DO NOTHING RETURNING id
-	`)
-	if err != nil {
-		return err
-	}
+	// 2. Собираем всех уникальных авторов
+	authorSet := make(map[string]struct{})
+	var statusChanges []StatusChangeData
 
-	_, err = tx.Prepare(ctx, "save-issue", `
-		INSERT INTO Issue (
-			projectId, authorId, assigneeId, key, summary, description, 
-			type, priority, status, createdTime, closedTime, updatedTime, timeSpent
-		) VALUES (
-			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
-		) ON CONFLICT (key) DO UPDATE SET
-			summary = EXCLUDED.summary,
-			description = EXCLUDED.description,
-			type = EXCLUDED.type,
-			priority = EXCLUDED.priority,
-			status = EXCLUDED.status,
-			updatedTime = EXCLUDED.updatedTime,
-			closedTime = EXCLUDED.closedTime,
-			timeSpent = EXCLUDED.timeSpent
-		RETURNING id
-	`)
-	if err != nil {
-		return err
-	}
-
-	_, err = tx.Prepare(ctx, "save-status-change", `
-		INSERT INTO StatusChanges (issueId, authorId, changeTime, fromStatus, toStatus)
-		VALUES ($1, $2, $3, $4, $5)
-		ON CONFLICT DO NOTHING 
-	`)
-	if err != nil {
-		return err
-	}
-
-	for _, issue := range issues {
-		var projectID int
-		err = tx.QueryRow(ctx, "save-project", project.Name, project.Key).Scan(&projectID)
-		if err != nil && !errors.Is(err, pgx.ErrNoRows) {
-			return err
-		}
-
-		if errors.Is(err, pgx.ErrNoRows) {
-			err = tx.QueryRow(ctx, `SELECT id FROM Projects WHERE key = $1`, project.Key).Scan(&projectID)
-			if err != nil {
-				return err
-			}
-		}
-
-		var authorID int
-		err = tx.QueryRow(ctx, "save-author", issue.Fields.Creator.DisplayName).Scan(&authorID)
-		if err != nil && !errors.Is(err, pgx.ErrNoRows) {
-			return err
-		}
-
-		if errors.Is(err, pgx.ErrNoRows) {
-			err = tx.QueryRow(ctx, `SELECT id FROM Author WHERE name = $1`, issue.Fields.Creator.DisplayName).Scan(&authorID)
-			if err != nil {
-				return err
-			}
-		}
-
-		var assigneeID int
+	for _, issue := range project.Issues {
+		authorSet[issue.Fields.Creator.DisplayName] = struct{}{}
 		if issue.Fields.Assignee.DisplayName != "" {
-			err = tx.QueryRow(ctx, "save-author", issue.Fields.Assignee.DisplayName).Scan(&assigneeID)
-			if err != nil && !errors.Is(err, pgx.ErrNoRows) {
-				return err
-			}
-
-			if errors.Is(err, pgx.ErrNoRows) {
-				err = tx.QueryRow(ctx, `SELECT id FROM Author WHERE name = $1`, issue.Fields.Assignee.DisplayName).Scan(&assigneeID)
-				if err != nil {
-					return err
-				}
-			}
-		}
-		createdTime, err := parseJiraTime(issue.Fields.Created)
-		if err != nil {
-			return err
+			authorSet[issue.Fields.Assignee.DisplayName] = struct{}{}
 		}
 
-		updatedTime, err := parseJiraTime(issue.Fields.Updated)
-		if err != nil {
-			return err
+		for _, history := range issue.Changelogs.Histories {
+			authorSet[history.Author.DisplayName] = struct{}{}
 		}
+	}
 
-		var closedTime time.Time
-		if issue.Fields.Resolution.Date != "" {
-			closedTime, err = parseJiraTime(issue.Fields.Resolution.Date)
-			if err != nil {
-				return err
-			}
+	// 3. Пакетное сохранение авторов
+	authorNames := make([]string, 0, len(authorSet))
+	for name := range authorSet {
+		authorNames = append(authorNames, name)
+	}
+
+	_, err = tx.Exec(ctx, `
+        INSERT INTO Author (name) 
+        SELECT unnest($1::text[]) 
+        ON CONFLICT DO NOTHING
+    `, authorNames)
+	if err != nil {
+		return fmt.Errorf("failed to batch insert authors: %w", err)
+	}
+
+	// 4. Получаем ID всех авторов
+	rows, err := tx.Query(ctx, `
+        SELECT name, id FROM Author 
+        WHERE name = ANY($1)
+    `, authorNames)
+	if err != nil {
+		return fmt.Errorf("failed to get author IDs: %w", err)
+	}
+	defer rows.Close()
+
+	authorIDs := make(map[string]int)
+	for rows.Next() {
+		var name string
+		var id int
+		if err := rows.Scan(&name, &id); err != nil {
+			return fmt.Errorf("failed to scan author ID: %w", err)
 		}
-		var issueID int
-		err = tx.QueryRow(ctx, "save-issue",
+		authorIDs[name] = id
+	}
+
+	// 5. Пакетное сохранение issues
+	issueBatch := &pgx.Batch{}
+	issueKeys := make([]string, 0, len(project.Issues))
+	issueKeyToID := make(map[string]int)
+
+	for _, issue := range project.Issues {
+		issueKeys = append(issueKeys, issue.Key)
+
+		issueBatch.Queue(`
+            INSERT INTO Issue (
+                projectId, authorId, assigneeId, key, summary, description, 
+                type, priority, status, createdTime, closedTime, updatedTime, timeSpent
+            ) VALUES (
+                $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
+            ) ON CONFLICT (key) DO UPDATE SET
+                summary = EXCLUDED.summary,
+                description = EXCLUDED.description,
+                type = EXCLUDED.type,
+                priority = EXCLUDED.priority,
+                status = EXCLUDED.status,
+                updatedTime = EXCLUDED.updatedTime,
+                closedTime = EXCLUDED.closedTime,
+                timeSpent = EXCLUDED.timeSpent
+            RETURNING id, key
+        `,
 			projectID,
-			authorID,
-			assigneeID,
+			authorIDs[issue.Fields.Creator.DisplayName],
+			authorIDs[issue.Fields.Assignee.DisplayName],
 			issue.Key,
 			issue.Fields.Summary,
 			issue.Fields.Description,
 			issue.Fields.IssueType.Name,
 			issue.Fields.Priority.Name,
 			issue.Fields.Status.Name,
-			createdTime,
-			closedTime,
-			updatedTime,
-			issue.Fields.Timespent,
-		).Scan(&issueID)
-		if err != nil && !errors.Is(err, pgx.ErrNoRows) {
-			return err
-		}
+			issue.Fields.Created.Time,
+			issue.Fields.Closed.Time,
+			issue.Fields.Updated.Time,
+			issue.Fields.Timetracking.TimeSpentSeconds,
+		)
 
-		if errors.Is(err, pgx.ErrNoRows) {
-			err = tx.QueryRow(ctx, `SELECT id FROM Issue WHERE key = $1`, issue.Key).Scan(&issueID)
-			if err != nil {
-				return err
-			}
-		}
-		changelog := issue.Changelogs
-		for _, history := range changelog.Histories {
-			changeTime, err := parseJiraTime(history.Created)
-			if err != nil {
-				return err
-			}
-
+		// Собираем изменения статусов
+		for _, history := range issue.Changelogs.Histories {
 			for _, item := range history.Items {
 				if item.Field == "status" {
-					var statusChangeAuthorID int
-					err = tx.QueryRow(ctx, "save-author", history.Author.DisplayName).Scan(&statusChangeAuthorID)
-					if err != nil && !errors.Is(err, pgx.ErrNoRows) {
-						return err
-					}
-
-					if errors.Is(err, pgx.ErrNoRows) {
-						err = tx.QueryRow(ctx, `SELECT id FROM Author WHERE name = $1`, history.Author.DisplayName).Scan(&statusChangeAuthorID)
-						if err != nil {
-							return err
-						}
-					}
-
-					_, err = tx.Exec(ctx, "save-status-change",
-						issueID,
-						statusChangeAuthorID,
-						changeTime,
-						item.FromString,
-						item.ToString,
-					)
-					if err != nil {
-						return err
-					}
+					statusChanges = append(statusChanges, StatusChangeData{
+						AuthorName: history.Author.DisplayName,
+						ChangeTime: history.Created.Time,
+						FromStatus: item.FromString,
+						ToStatus:   item.ToString,
+						IssueKey:   issue.Key,
+					})
 				}
-
 			}
 		}
 	}
 
+	// Выполняем пакетное сохранение issues
+	br := tx.SendBatch(ctx, issueBatch)
+	defer br.Close()
+
+	for range project.Issues {
+		var id int
+		var key string
+		if err := br.QueryRow().Scan(&id, &key); err != nil {
+			return fmt.Errorf("failed to save issue: %w", err)
+		}
+		issueKeyToID[key] = id
+	}
+	if err := br.Close(); err != nil {
+		return fmt.Errorf("failed to close issue batch: %w", err)
+	}
+
+	// 6. Пакетное сохранение изменений статусов
+	if len(statusChanges) > 0 {
+		statusChangeBatch := &pgx.Batch{}
+
+		for _, sc := range statusChanges {
+			statusChangeBatch.Queue(`
+                INSERT INTO StatusChanges (issueId, authorId, changeTime, fromStatus, toStatus)
+                VALUES ($1, $2, $3, $4, $5)
+                ON CONFLICT DO NOTHING
+            `,
+				issueKeyToID[sc.IssueKey],
+				authorIDs[sc.AuthorName],
+				sc.ChangeTime,
+				sc.FromStatus,
+				sc.ToStatus,
+			)
+		}
+
+		sr := tx.SendBatch(ctx, statusChangeBatch)
+		if err := sr.Close(); err != nil {
+			return fmt.Errorf("failed to save status changes: %w", err)
+		}
+	}
+
 	return tx.Commit(ctx)
+}
+
+type StatusChangeData struct {
+	IssueKey   string
+	AuthorName string
+	ChangeTime time.Time
+	FromStatus string
+	ToStatus   string
 }
 
 func (p *ProjectRepository) Close() error {
