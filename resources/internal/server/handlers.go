@@ -26,8 +26,14 @@ func (s *Server) getProjects(c *gin.Context) {
 	if err != nil {
 		limit = 20
 	}
+	if limit <= 0 {
+		limit = 20
+	}
 	offset, err := strconv.Atoi(c.Query("offset"))
 	if err != nil {
+		offset = 0
+	}
+	if offset < 0 {
 		offset = 0
 	}
 
