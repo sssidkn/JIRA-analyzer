@@ -15,7 +15,7 @@
 
     <div class="project-card__btns">
         <button class="download-btn" (click)="ps.updateProject(project.key)">
-            @if (isProjectDownloaded) {
+            @if (!isProjectDownloaded) {
                 Download
             } @else {
                 Update
