@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/sssidkn/JIRA-analyzer/internal/models"
 )
 
@@ -19,10 +19,10 @@ type Repository interface {
 }
 
 type repo struct {
-	db *pgx.Conn
+	db *pgxpool.Pool
 }
 
-func New(db *pgx.Conn) *repo {
+func New(db *pgxpool.Pool) *repo {
 	return &repo{db: db}
 }
 
