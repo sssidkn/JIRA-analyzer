@@ -19,7 +19,54 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/api/v1//histories/by-issue/{issueId}": {
+        "/api/v1/histories/by-author/{authorId}": {
+            "get": {
+                "description": "Возвращает историю изменений, сделанных указанным автором",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "History"
+                ],
+                "summary": "Получить историю изменений автора",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID автора",
+                        "name": "authorId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Неверный ID автора",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Автор не найден",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/histories/by-issue/{issueId}": {
             "get": {
                 "description": "Возвращает историю изменений для указанной задачи",
                 "produces": [
@@ -66,7 +113,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1//issues/by-project/{projectId}": {
+        "/api/v1/issues/by-project/{projectId}": {
             "get": {
                 "description": "Возвращает список задач для указанного проекта с пагинацией",
                 "produces": [
@@ -112,53 +159,6 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Проект не найден",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "500": {
-                        "description": "Внутренняя ошибка сервера",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/histories/by-author/{authorId}": {
-            "get": {
-                "description": "Возвращает историю изменений, сделанных указанным автором",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "History"
-                ],
-                "summary": "Получить историю изменений автора",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "ID автора",
-                        "name": "authorId",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/models.Response"
-                        }
-                    },
-                    "400": {
-                        "description": "Неверный ID автора",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "404": {
-                        "description": "Автор не найден",
                         "schema": {
                             "type": "string"
                         }
