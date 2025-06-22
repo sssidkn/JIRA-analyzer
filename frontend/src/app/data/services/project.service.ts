@@ -28,7 +28,7 @@ export class ProjectService {
   }
 
   isDownloaded(id: string) {
-    return this.http.get<{status: string}>(`/api/v1/projects/${id}`);
+    return this.http.get<{status: string}>(`http://localhost:8080/api/v1/projects/${id}`);
   }
 
 }

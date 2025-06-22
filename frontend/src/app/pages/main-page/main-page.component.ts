@@ -17,10 +17,9 @@ export class MainPageComponent {
   pageInfo: PageInfo | undefined;
   projectsResponse: ProjectsResponse | undefined;
   constructor() {
-    this.projectService.getProjects("ATL", 20, 1)
+    this.projectService.getProjects("AT", 20, 1)
       .subscribe(projectsResponse => {
-        console.log('Полный ответ:', projectsResponse); // Проверьте структуру ответа
-        console.log('Первый проект:', projectsResponse.projects[0]); // Проверьте первый проект
+        console.log('Полный ответ:', projectsResponse);
         this.projects = projectsResponse.projects;
         this.pageInfo = projectsResponse.pageInfo;
       })

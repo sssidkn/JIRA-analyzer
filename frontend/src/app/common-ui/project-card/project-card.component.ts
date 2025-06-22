@@ -18,11 +18,11 @@ export class ProjectCardComponent {
             this.ps.isDownloaded(this.project.id).subscribe({
                 next: (response) => {
                     if (response?.status) {
-                        this.isProjectDownloaded = response.status !== "not exist";
+                        this.isProjectDownloaded = response.status != "not exist";
                     }
                 },
                 error: (err) => {
-                    console.error('Error checking download status:', err);
+                    console.error(`Error checking download status ${this.project.key}:`, err);
                     this.isProjectDownloaded = false;
                 }
             });
