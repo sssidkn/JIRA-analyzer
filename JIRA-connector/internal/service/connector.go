@@ -142,7 +142,7 @@ func (jc *JiraConnector) UpdateProject(ctx context.Context, projectKey string) (
 			ID:         projectInfo.ID,
 			Key:        projectKey,
 			Name:       projectInfo.Name,
-			Self:       jc.apiClient.GetBaseURL() + "/projects/" + project.Key,
+			Self:       jc.apiClient.GetBaseURL() + "/projects/" + projectInfo.Key,
 			Issues:     *issues,
 			LastUpdate: updateTime,
 		}
