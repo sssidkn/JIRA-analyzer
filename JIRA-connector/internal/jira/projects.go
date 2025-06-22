@@ -20,7 +20,6 @@ func (c *Client) GetProject(ctx context.Context, projectKey string) (*models.Jir
 		logger.Field{Key: "project_key", Value: projectKey},
 		logger.Field{Key: "project_url", Value: endpoint},
 	)
-	log.Info("Fetching project")
 
 	req, err := http.NewRequest("GET", endpoint, nil)
 	if err != nil {
@@ -58,7 +57,7 @@ func (c *Client) GetProject(ctx context.Context, projectKey string) (*models.Jir
 	log.Info("Fetched issues count", logger.Field{Key: "total", Value: project.TotalIssueCount})
 	log.Info("Fetching issues")
 	issues, err = c.getAllIssues(ctx, projectKey, project.TotalIssueCount)
-	log.Info("Fetched issues")
+	log.Info("Fetching issues ended")
 	if err != nil {
 		return nil, fmt.Errorf("failed to get issues: %w", err)
 	}

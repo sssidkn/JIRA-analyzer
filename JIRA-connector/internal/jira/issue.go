@@ -60,7 +60,7 @@ func (c *Client) getIssuesBy(ctx context.Context, total int, params url.Values) 
 	totalPages := (total + pageSize - 1) / pageSize
 	c.logger.Debug(fmt.Sprintf("Total pages: %d", totalPages))
 
-	pagest := make(chan int, threadsCount)
+	pages := make(chan int, threadsCount)
 	results := make(chan []models.JiraIssue, threadsCount)
 
 	errGroup, ctx := errgroup.WithContext(ctx)
@@ -69,10 +69,10 @@ func (c *Client) getIssuesBy(ctx context.Context, total int, params url.Values) 
 	link := c.buildURL("/search", params)
 
 	errGroup.Go(func() error {
-		defer close(pagest)
+		defer close(pages)
 		for page := 0; page < totalPages; page++ {
 			select {
-			case pagest <- page:
+			case pages <- page:
 			case <-ctx.Done():
 				return ctx.Err()
 			}
@@ -82,7 +82,7 @@ func (c *Client) getIssuesBy(ctx context.Context, total int, params url.Values) 
 
 	for i := 0; i < threadsCount; i++ {
 		errGroup.Go(func() error {
-			return c.issuePageWorker(ctx, pagest, results, link)
+			return c.issuePageWorker(ctx, pages, results, link)
 		})
 	}
 
@@ -149,9 +149,7 @@ func (c *Client) issuePageWorker(ctx context.Context, pages <-chan int,
 				logger.Field{Key: "page_size", Value: pageSize},
 				logger.Field{Key: "page", Value: page})
 
-			reqCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
-			issues, err := c.getIssuesPage(reqCtx, link+fmt.Sprintf("&startAt=%d", startAt))
-			cancel()
+			issues, err := c.getIssuesPage(ctx, link+fmt.Sprintf("&startAt=%d", startAt))
 
 			if err != nil {
 				return fmt.Errorf("failed to get issues page: %w", err)

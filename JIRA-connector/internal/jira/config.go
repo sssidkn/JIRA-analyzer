@@ -36,3 +36,7 @@ func WithLogger(log logger.Logger) func(*Client) {
 		c.logger = log
 	}
 }
+
+func (c *Client) GetBaseURL() string {
+	return c.config.BaseURL
+}

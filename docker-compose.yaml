@@ -33,7 +33,7 @@ services:
           memory: 1G
           cpus: '0.5'
 
-  jira-connector:
+  connector:
     build:
       context: ./jira-connector
       dockerfile: Dockerfile

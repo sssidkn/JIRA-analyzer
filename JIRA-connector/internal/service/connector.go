@@ -35,21 +35,22 @@ type Option = func(*JiraConnector) error
 type Repository interface {
 	SaveProject(ctx context.Context, project Project) error
 	GetProjectInfo(ctx context.Context, projectKey string) (*models.ProjectInfo, error)
-	Close() error
 }
 
 type APIClient interface {
 	UpdateProject(ctx context.Context, projectKey string, lastUpdate time.Time) (*[]models.JiraIssue, error)
 	GetProject(ctx context.Context, projectKey string) (*Project, error)
 	GetProjects(ctx context.Context, limit, page int, search string) ([]models.ProjectInfo, error)
+	GetBaseURL() string
 }
 
-func WithLogger(logger logger.Logger) Option {
+func WithLogger(log logger.Logger) Option {
 	return func(jc *JiraConnector) error {
-		if logger == nil {
-			return fmt.Errorf("ERROR: logger is nil")
+		if log == nil {
+			log = logger.NewLogrusLogger()
+			log.SetLevel(logger.LevelInfo)
 		}
-		jc.logger = logger
+		jc.logger = log
 		return nil
 	}
 }
@@ -57,7 +58,7 @@ func WithLogger(logger logger.Logger) Option {
 func WithRepository(repo Repository) Option {
 	return func(jc *JiraConnector) error {
 		if repo == nil {
-			return fmt.Errorf("ERROR: repo is nil")
+			return fmt.Errorf("repo is nil")
 		}
 		jc.repo = repo
 		return nil
@@ -67,7 +68,7 @@ func WithRepository(repo Repository) Option {
 func WithAPIClient(apiClient APIClient) Option {
 	return func(jc *JiraConnector) error {
 		if apiClient == nil {
-			return fmt.Errorf("ERROR: apiClient is nil")
+			return fmt.Errorf("apiClient is nil")
 		}
 		jc.apiClient = apiClient
 		return nil
@@ -83,6 +84,7 @@ func (jc *JiraConnector) GetProjects(ctx context.Context, limit, page int, searc
 	for _, project := range projects {
 		if strings.Contains(strings.ToLower(project.Name), strings.ToLower(search)) {
 			p = append(p, &connectorApi.JiraProject{
+				Id:   project.ID,
 				Url:  project.Self,
 				Key:  project.Key,
 				Name: project.Name,
@@ -140,6 +142,7 @@ func (jc *JiraConnector) UpdateProject(ctx context.Context, projectKey string) (
 			ID:         projectInfo.ID,
 			Key:        projectKey,
 			Name:       projectInfo.Name,
+			Self:       jc.apiClient.GetBaseURL() + "/projects/" + project.Key,
 			Issues:     *issues,
 			LastUpdate: updateTime,
 		}
