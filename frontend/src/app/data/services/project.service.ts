@@ -1,6 +1,6 @@
 import {inject, Injectable} from '@angular/core';
 import {HttpClient} from '@angular/common/http';
-import { ProjectsResponse } from '../models/project.model';
+import {ProjectsResponse} from '../models/project.model';
 import {Observable} from 'rxjs';
 
 @Injectable({
@@ -15,15 +15,15 @@ export class ProjectService {
   }
 
   updateProject(projectKey: string) {
-    return this.http.post(`/api/v1/connector/updateProject?project=${projectKey}}`, null);
+    return this.http.post(`/api/v1/connector/updateProject`, `{"project_key": ${projectKey}}`);
   }
 
   isAnalyzed(projectKey: string) {
     return this.http.get<boolean>(`/api/v1/isAnalyzed?project=${projectKey}`);
   }
 
-  isDownloaded(id: number) {
-    return this.http.get<boolean>(`/api/v1/projects/${id}`);
+  isDownloaded(id: string) {
+    return this.http.get<string>(`/api/v1/projects/${id}`);
   }
 
 }

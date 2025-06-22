@@ -1,8 +1,8 @@
 export interface Project {
-    id: number;
     url: string;
     key: string;
     name: string;
+    id: string;
 }
 
 export interface PageInfo {

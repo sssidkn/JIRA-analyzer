@@ -1,4 +1,4 @@
-import { Component, Input, inject } from '@angular/core';
+import {Component, Input, inject} from '@angular/core';
 import {Project} from '../../data/models/project.model';
 import {ProjectService} from '../../data/services/project.service';
 
@@ -11,11 +11,11 @@ import {ProjectService} from '../../data/services/project.service';
 export class ProjectCardComponent {
   @Input() project!: Project
   ps = inject(ProjectService)
-  isAnalyzed: boolean = false;
-  isDownloaded: boolean = false;
+  isProjectDownloaded: boolean = false;
+
   ngOnInit() {
-    this.ps.isAnalyzed(this.project.key).subscribe({
-      next: (analyzed) => this.isAnalyzed = analyzed,
+    this.ps.isDownloaded(this.project.id).subscribe({
+      next: (downloaded) => this.isProjectDownloaded = downloaded != "not exist",
       error: (err) => console.error('Error checking analysis status:', err)
     });
 

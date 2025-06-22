@@ -12,15 +12,5 @@ import {PageInfo, Project, ProjectsResponse} from "./data/models/project.model";
 })
 
 export class AppComponent {
-  projectService = inject(ProjectService)
-  projects: Project[] = []
-  pageInfo: PageInfo | undefined;
-  projectsResponse: ProjectsResponse | undefined;
-  constructor() {
-    this.projectService.getProjects("", 20, 1)
-      .subscribe(projectsResponse => {
-         this.projects = projectsResponse.projects;
-         this.pageInfo = projectsResponse.pageInfo;
-      })
-  }
+
 }

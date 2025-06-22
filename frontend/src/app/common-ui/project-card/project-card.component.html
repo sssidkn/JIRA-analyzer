@@ -14,10 +14,10 @@
   </div>
 
   <div class="project-card__btns">
-    <button class="download-btn">
+    <button class="download-btn" (click)="ps.updateProject(project.key)">
       Download
     </button>
-    @if (isAnalyzed()) {
+    @if (isProjectDownloaded) {
       <button class="analyze_btn">
         <img src="/analyze.svg" alt="icon" class="analyze_icon">
       </button>
