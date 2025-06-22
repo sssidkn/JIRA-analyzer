@@ -7,15 +7,14 @@
 .project-card {
   border: 1px solid var(--white-color);
   padding: 27px 21px;
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr) 1fr;
+  align-items: center;
   margin-left: auto;
   margin-right: auto;
   margin-bottom: 7px;
-  align-items: center;
-  justify-content: space-between;
   height: 60px;
   max-width: 70%;
-  align-content: space-around;
 }
 
 h3 {
@@ -35,7 +34,12 @@ h3 {
   width: 30px;
 }
 
+.project_name {
+  grid-column: 1;
+}
+
 .project_info {
+  grid-column: 2;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -52,9 +56,11 @@ h3 {
 }
 
 .project-card__btns {
+  grid-column: 3;
   display: flex;
   flex-direction: row;
-  align-items: flex-start;
+  align-items: center;
+  justify-content: flex-end;
 }
 
 .project_info__key {

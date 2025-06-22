@@ -1,15 +1,15 @@
 <div class="project-card">
   <div class="project-name">
     <h3>
-      Project Name
+      {{ project.name }}
     </h3>
   </div>
   <div class="project_info">
     <span class="project_info__key">
-      <h3>KEY</h3>
+      <h3>{{ project.key }}</h3>
     </span>
     <span class="project-info__link">
-      <h5>https://apache.bla.bla.bla.com</h5>
+      <a [href]="project.url" target="_blank">{{ project.url }}</a>
     </span>
   </div>
 
@@ -17,9 +17,10 @@
     <button class="download-btn">
       Download
     </button>
-
-    <button class="analyze_btn">
-      <img src="/analyze.svg" alt="icon" class="analyze_icon">
-    </button>
+    @if (isAnalyzed()) {
+      <button class="analyze_btn">
+        <img src="/analyze.svg" alt="icon" class="analyze_icon">
+      </button>
+    }
   </div>
 </div>

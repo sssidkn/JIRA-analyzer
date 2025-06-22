@@ -1,3 +1,7 @@
-<pre>
-  {{projects | json}}
-</pre>
+<div class="project-list">
+    @for (project of projects; track project.key) {
+        <app-project-card [project]="project"></app-project-card>
+    } @empty {
+        <p>Проекты не найдены</p>
+    }
+</div>

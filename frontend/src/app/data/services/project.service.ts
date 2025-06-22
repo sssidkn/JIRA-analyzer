@@ -1,15 +1,29 @@
 import {inject, Injectable} from '@angular/core';
 import {HttpClient} from '@angular/common/http';
+import { ProjectsResponse } from '../models/project.model';
+import {Observable} from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
 })
+
 export class ProjectService {
-  http = inject(HttpClient)
+  http = inject(HttpClient);
 
-  baseApiUrl = 'http://localhost:8081/'
-
-  getProjects() {
-    return this.http.get(`${this.baseApiUrl}api/v1/connector/projects`)
+  getProjects(search: string, limit: number, page: number): Observable<ProjectsResponse> {
+    return this.http.get<ProjectsResponse>(`/api/v1/connector/projects?limit=${limit}&page=${page}&search=${search}`);
   }
+
+  updateProject(projectKey: string) {
+    return this.http.post(`/api/v1/connector/updateProject?project=${projectKey}}`, null);
+  }
+
+  isAnalyzed(projectKey: string) {
+    return this.http.get<boolean>(`/api/v1/isAnalyzed?project=${projectKey}`);
+  }
+
+  isDownloaded(id: number) {
+    return this.http.get<boolean>(`/api/v1/projects/${id}`);
+  }
+
 }
