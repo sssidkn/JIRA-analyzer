@@ -12,5 +12,4 @@ import {PageInfo, Project, ProjectsResponse} from "./data/models/project.model";
 })
 
 export class AppComponent {
-
 }

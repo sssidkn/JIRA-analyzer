@@ -13,11 +13,19 @@ export class ProjectCardComponent {
   ps = inject(ProjectService)
   isProjectDownloaded: boolean = false;
 
-  ngOnInit() {
-    this.ps.isDownloaded(this.project.id).subscribe({
-      next: (downloaded) => this.isProjectDownloaded = downloaded != "not exist",
-      error: (err) => console.error('Error checking analysis status:', err)
-    });
-
-  }
+    ngOnInit() {
+        if (this.project?.id) {
+            this.ps.isDownloaded(this.project.id).subscribe({
+                next: (response) => {
+                    if (response?.status) {
+                        this.isProjectDownloaded = response.status !== "not exist";
+                    }
+                },
+                error: (err) => {
+                    console.error('Error checking download status:', err);
+                    this.isProjectDownloaded = false;
+                }
+            });
+        }
+    }
 }

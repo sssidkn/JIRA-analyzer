@@ -15,7 +15,12 @@ export class ProjectService {
   }
 
   updateProject(projectKey: string) {
-    return this.http.post(`/api/v1/connector/updateProject`, `{"project_key": ${projectKey}}`);
+    console.log('update project', projectKey);
+    return this.http.post(`/api/v1/connector/updateProject`, { project_key: projectKey })
+        .subscribe({
+          next: (response) => console.log('Успех:', response),
+          error: (err) => console.error('Ошибка:', err),
+        });
   }
 
   isAnalyzed(projectKey: string) {
@@ -23,7 +28,7 @@ export class ProjectService {
   }
 
   isDownloaded(id: string) {
-    return this.http.get<string>(`/api/v1/projects/${id}`);
+    return this.http.get<{status: string}>(`http://localhost:8080/api/v1/projects/${id}`);
   }
 
 }
