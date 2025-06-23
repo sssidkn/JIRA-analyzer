@@ -21,6 +21,7 @@ export interface MyProjectsPageInfo {
     total: number;
     currentPage: number;
 }
+
 export interface MyProjectsResponse {
     data: Project[];
     pageInfo: MyProjectsPageInfo;
@@ -28,18 +29,29 @@ export interface MyProjectsResponse {
 }
 
 export interface StatisticResponse {
-  data:
-    {
-      id: number,
-      key: string,
-      name: string,
-      allIssuesCount: number,
-      openedIssuesCount: number,
-      closedIssuesCount: number,
-      resolvedIssuesCount: number,
-      reopenedIssuesCount: number,
-      progressIssuesCount: number,
-      averageTime: number,
-      averageIssuesCount: number,
-    }
+    data:
+        {
+            id: number,
+            key: string,
+            name: string,
+            allIssuesCount: number,
+            openedIssuesCount: number,
+            closedIssuesCount: number,
+            resolvedIssuesCount: number,
+            reopenedIssuesCount: number,
+            progressIssuesCount: number,
+            averageTime: number,
+            averageIssuesCount: number,
+        }
+}
+
+
+export interface Task1 {
+    count: number;
+    time: string;
+}
+
+export interface Task2 {
+    count: number;
+    priority: string;
 }

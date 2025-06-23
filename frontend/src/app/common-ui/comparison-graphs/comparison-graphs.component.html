@@ -1,0 +1,24 @@
+<div class="graphs-container">
+  <p-toast></p-toast>
+
+  <div *ngIf="isLoading" class="loading">
+    <p>Loading graphs data...</p>
+    <p-progressSpinner></p-progressSpinner>
+  </div>
+
+  <div *ngIf="showCharts" class="charts">
+    <div class="chart-container" *ngIf="timeChartData">
+      <h3>Task Completion Time Distribution</h3>
+      <p-chart type="bar" [data]="timeChartData" [options]="chartOptions" height="400px"></p-chart>
+    </div>
+
+    <div class="chart-container" *ngIf="priorityChartData">
+      <h3>Task Priority Distribution</h3>
+      <p-chart type="bar" [data]="priorityChartData" [options]="chartOptions" height="400px"></p-chart>
+    </div>
+  </div>
+
+  <div *ngIf="!isLoading && !showCharts && projectKeys.length > 0 && !hasError" class="no-data">
+    <p>No graph data available for selected projects</p>
+  </div>
+</div>

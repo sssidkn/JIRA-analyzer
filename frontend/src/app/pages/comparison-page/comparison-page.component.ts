@@ -3,12 +3,20 @@ import { ProjectService } from '../../data/services/project.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Project, MyProjectsResponse, StatisticResponse } from '../../data/models/project.model';
+import {ComparisonGraphsComponent} from "../../common-ui/comparison-graphs/comparison-graphs.component";
+import {ChartModule} from "primeng/chart";
+import {ToastModule} from "primeng/toast";
+import {ProgressSpinnerModule} from "primeng/progressspinner";
 
 @Component({
   selector: 'app-comparison-page',
   imports: [
     CommonModule,
-    FormsModule
+    FormsModule,
+    ComparisonGraphsComponent,
+    ChartModule,
+    ToastModule,
+    ProgressSpinnerModule
   ],
   standalone: true,
   templateUrl: './comparison-page.component.html',
@@ -24,6 +32,7 @@ export class ComparisonPageComponent implements OnInit {
   pageCount = 1;
   isLoading = false;
   showComparison = false;
+  showGraphs = false;
 
   constructor(private projectService: ProjectService) {}
 
@@ -56,24 +65,25 @@ export class ComparisonPageComponent implements OnInit {
 
     this.isLoading = true;
     this.statistics = [];
+    this.showGraphs = false;
 
     const statsPromises = this.selectedProjects.map(projectKey => {
       return this.projectService.getStatistic(projectKey).toPromise();
     });
 
     Promise.all(statsPromises)
-      .then(results => {
-        // Извлекаем data из каждого результата
-        this.statistics = results
-          .filter(r => r !== undefined && r.data !== undefined)
-          .map(r => r!.data);
-        this.showComparison = true;
-        this.isLoading = false;
-      })
-      .catch(error => {
-        console.error('Error fetching statistics:', error);
-        this.isLoading = false;
-      });
+        .then(results => {
+          this.statistics = results
+              .filter(r => r !== undefined && r.data !== undefined)
+              .map(r => r!.data);
+          this.showComparison = true;
+          this.showGraphs = true;
+          this.isLoading = false;
+        })
+        .catch(error => {
+          console.error('Error fetching statistics:', error);
+          this.isLoading = false;
+        });
   }
 
   onPageChange(page: number): void {
