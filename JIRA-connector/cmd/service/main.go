@@ -28,18 +28,24 @@ func main() {
 	var log logger.Logger = logger.NewLogrusLogger()
 	log.SetLevel(cfg.LogLevel)
 
+	log.Info("Initializing jira client...")
 	jiraClient := jira.NewClient(
 		jira.WithConfig(cfg.Jira),
 		jira.WithLogger(log),
+		jira.WithMaxDelay(cfg.Jira.MaxDelay),
+		jira.WithStartDelay(cfg.Jira.StartDelay),
 	)
+	log.Info("Jira client initialized")
 
+	log.Info("Initializing db connection...")
 	dbPool, err := postgres.New(cfg.Postgres)
 	if err != nil {
 		panic(err)
 	}
-
 	repo := repository.NewProjectRepository(dbPool)
+
 	repo.SetLogger(log)
+	log.Info("DB connection initialized")
 
 	jc, err := connector.NewJiraConnector(
 		connector.WithAPIClient(jiraClient),
@@ -67,7 +73,6 @@ func main() {
 		httpSrv.WithLogger(log),
 		httpSrv.WithGRPCAddress(fmt.Sprintf("%s:%d", cfg.Host, cfg.PortGRPC)),
 	)
-
 	err = httpServer.Start(fmt.Sprintf("%s:%d", cfg.Host, cfg.PortHTTP))
 	if err != nil {
 		panic(err)

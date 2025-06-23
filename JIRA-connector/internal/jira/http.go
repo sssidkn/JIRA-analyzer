@@ -8,6 +8,14 @@ import (
 	"net/url"
 )
 
+type APIError struct {
+	StatusCode int
+	Message    string
+}
+
+func (e *APIError) Error() string {
+	return fmt.Sprintf("Jira API error: %d - %s", e.StatusCode, e.Message)
+}
 func (c *Client) buildURL(endpoint string, params url.Values) string {
 	return fmt.Sprintf("%s%s%s?%s", c.config.BaseURL, c.config.VersionAPI, endpoint, params.Encode())
 }

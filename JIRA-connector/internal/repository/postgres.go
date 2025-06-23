@@ -56,13 +56,11 @@ func (p *ProjectRepository) SaveProject(ctx context.Context, project Project) er
 	}
 	defer tx.Rollback(ctx)
 
-	var projectID int
-	err = tx.QueryRow(ctx, `
-        INSERT INTO Projects (title, key, lastUpdate) 
-        VALUES ($1, $2, $3) 
+	_, err = tx.Exec(ctx, `
+        INSERT INTO Projects (id, title, key, lastUpdate) 
+        VALUES ($1, $2, $3, $4) 
         ON CONFLICT (key) DO UPDATE SET lastUpdate = EXCLUDED.lastUpdate
-        RETURNING id
-    `, project.Name, project.Key, project.LastUpdate).Scan(&projectID)
+    `, project.ID, project.Name, project.Key, project.LastUpdate)
 	if err != nil {
 		return fmt.Errorf("failed to save project: %w", err)
 	}
@@ -138,7 +136,7 @@ func (p *ProjectRepository) SaveProject(ctx context.Context, project Project) er
                 timeSpent = EXCLUDED.timeSpent
             RETURNING id, key
         `,
-			projectID,
+			project.ID,
 			authorIDs[issue.Fields.Creator.DisplayName],
 			authorIDs[issue.Fields.Assignee.DisplayName],
 			issue.Key,

@@ -2,9 +2,11 @@ package jira
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"jira-connector/internal/models"
 	"jira-connector/pkg/logger"
+	"net/http"
 	"net/url"
 	"time"
 
@@ -131,11 +133,14 @@ func (c *Client) getIssuesPage(ctx context.Context, link string) ([]models.JiraI
 	return result.Issues, nil
 }
 
-func (c *Client) issuePageWorker(ctx context.Context, pages <-chan int,
+func (c *Client) issuePageWorker(ctx context.Context, pages chan int,
 	issuePages chan<- []models.JiraIssue, link string) error {
 
 	pageSize := c.config.MaxResults
 	for {
+		if err := c.waitIfPaused(ctx); err != nil {
+			return err
+		}
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
@@ -151,9 +156,19 @@ func (c *Client) issuePageWorker(ctx context.Context, pages <-chan int,
 
 			issues, err := c.getIssuesPage(ctx, link+fmt.Sprintf("&startAt=%d", startAt))
 
-			if err != nil {
-				return fmt.Errorf("failed to get issues page: %w", err)
+			var apiErr *APIError
+			if errors.As(err, &apiErr) {
+				if apiErr.StatusCode == http.StatusTooManyRequests || apiErr.StatusCode >= 500 {
+					c.logger.Info("API rate limit exceeded", logger.Field{Key: "Error", Value: apiErr.Error()})
+					c.rl.Pause()
+					go func() { pages <- page }()
+					continue
+				} else {
+					return err
+				}
 			}
+
+			c.rl.Reset()
 
 			select {
 			case issuePages <- issues:
@@ -163,6 +178,29 @@ func (c *Client) issuePageWorker(ctx context.Context, pages <-chan int,
 			case <-ctx.Done():
 				return ctx.Err()
 			}
+		}
+	}
+}
+
+func (c *Client) waitIfPaused(ctx context.Context) error {
+	for {
+		paused, duration := c.rl.ShouldPause()
+		if !paused {
+			return nil
+		}
+		if duration >= c.maxDelay {
+			return errors.New("exceeded max delay")
+		}
+		c.logger.Info("Request paused due to rate limiting",
+			logger.Field{Key: "retry_after", Value: duration.String()})
+
+		select {
+		case <-time.After(duration):
+			continue
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-c.rl.NotifyPause():
+			continue
 		}
 	}
 }
