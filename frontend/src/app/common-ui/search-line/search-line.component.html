@@ -1,1 +1,6 @@
-<p>search-line works!</p>
+<input
+  type="text"
+  [(ngModel)]="searchQuery"
+  (ngModelChange)="onSearchChange()"
+  placeholder="Поиск..."
+>

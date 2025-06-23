@@ -1,7 +1,37 @@
-<div class="project-list">
-  @for (project of projects; track project.key) {
-    <app-project-card [project]="project"></app-project-card>
-  } @empty {
-    <p>Проекты не найдены</p>
-  }
+<div class="projects">
+    <div class="search-container">
+        <input
+                type="text"
+                [(ngModel)]="searchQuery"
+                (ngModelChange)="onSearchChange()"
+                placeholder="Search..."
+        >
+    </div>
+    <div class="project-list">
+        @for (project of projects; track project.key) {
+            <app-project-card [project]="project"></app-project-card>
+        } @empty {
+            <p>Projects not found</p>
+        }
+    </div>
+    @if (pageInfo.pageCount > 1) {
+        <div class="pagination">
+
+            @for (page of visiblePages; track page) {
+                @if (page === -1) {
+                    <span class="ellipsis">...</span>
+                } @else {
+                    <button
+                            (click)="goToPage(page)"
+                            [class.active]="page === pageInfo.currentPage"
+                            class="page-number">
+                        {{ page }}
+                    </button>
+                }
+            }
+
+        </div>
+    }
+
+
 </div>

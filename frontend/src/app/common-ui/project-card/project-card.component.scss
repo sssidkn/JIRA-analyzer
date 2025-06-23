@@ -47,12 +47,27 @@ h3 {
 }
 
 .download-btn {
+  &[disabled] {
+    opacity: 1;
+    cursor: not-allowed;
+    background-color: var(--primary-color);
+  }
+
+  border-radius: 5px;
   height: 46px;
   width: 152px;
   font-size: 20px;
   margin-right: 17px;
   font-weight: 800;
   background-color: var(--primary-color);
+}
+
+.download-btn:hover {
+  cursor: pointer;
+}
+
+a {
+  color: var(--gray-color);
 }
 
 .project-card__btns {
@@ -76,3 +91,29 @@ h5 {
   color: var(--gray-color);
 }
 
+.spinner {
+  display: inline-block;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.download-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.project-card {
+  background-color: var(--black-color);
+  border-radius: 5px;
+}
+button {
+  cursor: pointer;
+}

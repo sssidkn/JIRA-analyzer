@@ -14,11 +14,15 @@
     </div>
 
     <div class="project-card__btns">
-        <button class="download-btn" (click)="ps.updateProject(project.key)">
-            @if (!isProjectDownloaded) {
-                Download
+        <button class="download-btn" [disabled]="isLoading" (click)="updateProject()">
+            @if (isLoading) {
+                <span class="spinner">⏳</span>
             } @else {
-                Update
+                @if (!isProjectDownloaded) {
+                    Download
+                } @else {
+                    Update
+                }
             }
         </button>
         <button class="analyze_btn">

@@ -6,12 +6,23 @@ export interface Project {
 }
 
 export interface PageInfo {
-    pageCount: string;
-    projectsCount: string;
+    pageCount: number;
+    projectsCount: number;
     currentPage: number;
 }
 
 export interface ProjectsResponse {
     projects: Project[];
     pageInfo: PageInfo;
+}
+
+export interface MyProjectsPageInfo {
+    pageCount: number;
+    total: number;
+    currentPage: number;
+}
+export interface MyProjectsResponse {
+    data: Project[];
+    pageInfo: MyProjectsPageInfo;
+    _links?: any;
 }

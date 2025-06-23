@@ -1,34 +1,33 @@
 import {inject, Injectable} from '@angular/core';
 import {HttpClient} from '@angular/common/http';
-import {ProjectsResponse} from '../models/project.model';
+import {MyProjectsResponse, ProjectsResponse} from '../models/project.model';
 import {Observable} from 'rxjs';
 
 @Injectable({
-  providedIn: 'root'
+    providedIn: 'root'
 })
 
 export class ProjectService {
-  http = inject(HttpClient);
+    http = inject(HttpClient);
 
-  getProjects(search: string, limit: number, page: number): Observable<ProjectsResponse> {
-    return this.http.get<ProjectsResponse>(`/api/v1/connector/projects?limit=${limit}&page=${page}&search=${search}`);
-  }
+    getProjects(search: string, limit: number, page: number): Observable<ProjectsResponse> {
+        return this.http.get<ProjectsResponse>(`/api/v1/connector/projects?limit=${limit}&page=${page}&search=${search}`);
+    }
 
-  updateProject(projectKey: string) {
-    console.log('update project', projectKey);
-    return this.http.post(`/api/v1/connector/updateProject`, { project_key: projectKey })
-        .subscribe({
-          next: (response) => console.log('Успех:', response),
-          error: (err) => console.error('Ошибка:', err),
-        });
-  }
+    updateProject(projectKey: string) {
+        console.log('update project', projectKey);
+        return this.http.post(`/api/v1/connector/updateProject`, {project_key: projectKey})
+    };
 
-  isAnalyzed(projectKey: string) {
-    return this.http.get<boolean>(`/api/v1/isAnalyzed?project=${projectKey}`);
-  }
+    isAnalyzed(projectKey: string) {
+        return this.http.get<boolean>(`/api/v1/isAnalyzed?project=${projectKey}`);
+    }
 
-  isDownloaded(id: string) {
-    return this.http.get<{status: string}>(`http://localhost:8080/api/v1/projects/${id}`);
-  }
+    isDownloaded(id: string) {
+        return this.http.get<{ status: string }>(`http://localhost:8080/api/v1/projects/${id}`);
+    }
 
+    getDownloadedProjects(limit: number, page: number): Observable<MyProjectsResponse> {
+        return this.http.get<MyProjectsResponse>(`http://localhost:8080/api/v1/projects?limit=${limit}&page=${page}}`);
+    }
 }
