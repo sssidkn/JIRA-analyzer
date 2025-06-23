@@ -8,14 +8,14 @@ import "google/api/annotations.proto";
 service JiraConnector {
   rpc UpdateProject (UpdateProjectRequest) returns (UpdateProjectResponse) {
     option (google.api.http) = {
-      post: "/api/v1/connectorApi/updateProject"
+      post: "/api/v1/connector/updateProject"
       body: "*"
     };
   }
 
   rpc GetProjects (GetProjectsRequest) returns (GetProjectsResponse) {
     option (google.api.http) = {
-      get: "/api/v1/connectorApi/projects"
+      get: "/api/v1/connector/projects"
     };
   }
 }
@@ -30,10 +30,9 @@ message UpdateProjectResponse {
 }
 
 message GetProjectsRequest {
-  repeated string project_keys = 1;
-  int64 page = 2;
-  int64 limit = 3;
-  string search = 4;
+  int64 page = 1;
+  int64 limit = 2;
+  string search = 3;
 }
 
 message GetProjectsResponse {
@@ -44,10 +43,12 @@ message GetProjectsResponse {
 message PageInfo {
   int64 page_count = 1;
   int64 projects_count = 2;
+  int64 current_page = 3;
 }
 
 message JiraProject {
   string url = 1;
   string key = 2;
   string name = 3;
+  string id = 4;
 }
