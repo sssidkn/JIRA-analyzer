@@ -71,7 +71,7 @@ services:
 
   resources:
     build:
-      context: ./analytics
+      context: ./resources
       dockerfile: Dockerfile
     expose:
       - "8085:8085"
