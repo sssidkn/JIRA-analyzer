@@ -1,0 +1,12 @@
+@font-face {
+  font-family: "K2D";
+  src: url("../public/fonts/K2D-Bold.ttf") format("truetype");
+  font-weight: bold;
+}
+@font-face {
+  font-family: "K2D";
+  src: url("../public/fonts/K2D-Regular.ttf") format("truetype");
+  font-weight: normal;
+}
+
+/*# sourceMappingURL=fonts.css.map */

@@ -1,0 +1,17 @@
+@import "fonts";
+
+:root {
+  --black-color: #1A1A1A;
+  --white-color: #E9E9E9;
+  --primary-color: #9E2AFF;
+  --gray-color: #4E4E4E;
+}
+
+body {
+  margin: 0;
+  padding-top: 110px;
+  background: linear-gradient(243deg, rgba(24, 17, 18, 1), rgba(46, 12, 80, 1));
+  -webkit-background: linear-gradient(243deg, rgba(24, 17, 18, 1), rgba(46, 12, 80, 1));
+  -moz-background: linear-gradient(243deg, rgba(24, 17, 18, 1), rgba(46, 12, 80, 1));
+  color: var(--white-color);
+}

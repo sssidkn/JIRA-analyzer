@@ -1,0 +1,109 @@
+.comparison-container {
+  display: flex;
+  min-height: 100vh;
+}
+
+.content {
+  flex: 1;
+  padding: 2rem;
+}
+
+.controls {
+  margin-bottom: 2rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.analyze-btn {
+  padding: 0.5rem 1rem;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-family: 'K2D', serif;
+  cursor: pointer;
+
+  &:hover {
+    background-color: var(--black-color);
+  }
+
+  &:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+  }
+}
+
+.projects-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 2rem;
+
+  th, td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+  }
+
+  th {
+    background-color: var(--grey-color);
+  }
+
+  tr:nth-child(even) {
+    background-color: var(--grey-color);
+  }
+
+  tr:hover {
+    background-color: var(--primary-color);
+  }
+}
+
+.pagination {
+  display: flex;
+  gap: 0.5rem;
+
+  button {
+    padding: 0.5rem 1rem;
+    border: 1px solid #ddd;
+    background-color: white;
+    cursor: pointer;
+
+    &.active {
+      background-color: var(--primary-color);
+      color: white;
+      border-color: var(--primary-color);
+    }
+
+    &:hover:not(.active) {
+      background-color: #ddd;
+    }
+  }
+}
+
+.loading, .no-projects {
+  padding: 2rem;
+  text-align: center;
+  font-size: 1.2rem;
+}
+
+.comparison-section {
+  margin-top: 2rem;
+  padding: 1rem;
+  border: 1px solid #eee;
+  border-radius: 4px;
+}
+
+.comparison-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+
+  th, td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: center;
+  }
+
+  th {
+    color: white;
+  }
+}

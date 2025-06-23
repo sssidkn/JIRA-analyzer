@@ -1,0 +1,73 @@
+* {
+  font-family: "K2D", "serif";
+  margin: 0;
+  padding: 0;
+}
+
+.project-card {
+  border: 1px solid var(--white-color);
+  padding: 27px 21px;
+  display: flex;
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: 7px;
+  align-items: center;
+  justify-content: space-between;
+  height: 60px;
+  max-width: 70%;
+  align-content: space-around;
+}
+
+h3 {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--white-color);
+}
+
+.analyze_btn {
+  background-color: rgba(255, 255, 255, 0);
+  padding: 4px 7px;
+  border: 2px solid var(--primary-color);
+}
+
+.analyze_icon {
+  height: 30px;
+  width: 30px;
+}
+
+.project_info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-around;
+}
+
+.download-btn {
+  height: 46px;
+  width: 152px;
+  font-size: 20px;
+  margin-right: 17px;
+  font-weight: 800;
+  background-color: var(--primary-color);
+}
+
+.project-card__btns {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+}
+
+.project_info__key {
+  font-size: 30px;
+}
+
+.project_info__link {
+  font-weight: 400;
+  font-size: 20px;
+}
+
+h5 {
+  color: var(--gray-color);
+}
+
+/*# sourceMappingURL=project-card.component.css.map */
