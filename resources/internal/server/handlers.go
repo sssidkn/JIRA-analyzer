@@ -26,8 +26,14 @@ func (s *Server) getProjects(c *gin.Context) {
 	if err != nil {
 		limit = 20
 	}
+	if limit <= 0 {
+		limit = 20
+	}
 	offset, err := strconv.Atoi(c.Query("offset"))
 	if err != nil {
+		offset = 0
+	}
+	if offset < 0 {
 		offset = 0
 	}
 
@@ -145,7 +151,7 @@ func (s *Server) getIssue(c *gin.Context) {
 // @Failure 400 {string} string "Неверные параметры запроса"
 // @Failure 404 {string} string "Проект не найден"
 // @Failure 500 {string} string "Внутренняя ошибка сервера"
-// @Router /api/v1//issues/by-project/{projectId} [get]
+// @Router /api/v1/issues/by-project/{projectId} [get]
 func (s *Server) getIssuesByProject(c *gin.Context) {
 	projectId, err := strconv.Atoi(c.Params.ByName("projectId"))
 	if err != nil {
@@ -184,7 +190,7 @@ func (s *Server) getIssuesByProject(c *gin.Context) {
 // @Failure 400 {string} string "Неверный ID задачи"
 // @Failure 404 {string} string "Задача не найдена"
 // @Failure 500 {string} string "Внутренняя ошибка сервера"
-// @Router /api/v1//histories/by-issue/{issueId} [get]
+// @Router /api/v1/histories/by-issue/{issueId} [get]
 func (s *Server) getHistoryByIssue(c *gin.Context) {
 	issueId, err := strconv.Atoi(c.Params.ByName("issueId"))
 	if err != nil {

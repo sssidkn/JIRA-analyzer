@@ -41,6 +41,12 @@ func New(service service.Service, l *logger.Logger, timeout time.Duration) *Serv
 	e.Use(gin.Recovery())
 	e.Use(timeoutMiddleware(timeout))
 	e.Use(logger.Middleware(l))
+	e.Use(func(c *gin.Context) {
+		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+		c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE")
+		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		c.Next()
+	})
 	s := &Server{
 		engine:  e,
 		service: service,

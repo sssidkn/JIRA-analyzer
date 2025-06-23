@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/sssidkn/JIRA-analyzer/internal/models"
 )
 
@@ -19,10 +19,10 @@ type Repository interface {
 }
 
 type repo struct {
-	db *pgx.Conn
+	db *pgxpool.Pool
 }
 
-func New(db *pgx.Conn) *repo {
+func New(db *pgxpool.Pool) *repo {
 	return &repo{db: db}
 }
 
@@ -63,43 +63,30 @@ func (r *repo) GetProject(ctx context.Context, id int) (*models.ProjectInfo, err
 	}
 
 	var project models.ProjectInfo
-	query := `SELECT id, key, title from projects WHERE id = $1`
-	err = r.db.QueryRow(ctx, query, id).Scan(&project.Id, &project.Key, &project.Name)
-	if err != nil {
-		return nil, ErrScan(err)
-	}
 
-	query = `SELECT COUNT(*) FROM issue WHERE projectid = $1`
-	err = r.db.QueryRow(ctx, query, id).Scan(&project.AllIssuesCount)
-	if err != nil {
-		return nil, ErrScan(err)
-	}
-
-	query = `SELECT COUNT(*) FROM issue WHERE projectid = $1 AND status = $2`
-	err = r.db.QueryRow(ctx, query, id, "Opened").Scan(&project.OpenedIssuesCount)
-	if err != nil {
-		return nil, ErrScan(err)
-	}
-	err = r.db.QueryRow(ctx, query, id, "Closed").Scan(&project.ClosedIssuesCount)
-	if err != nil {
-		return nil, ErrScan(err)
-	}
-	err = r.db.QueryRow(ctx, query, id, "Resolved").Scan(&project.ResolvedIssuesCount)
-	if err != nil {
-		return nil, ErrScan(err)
-	}
-	err = r.db.QueryRow(ctx, query, id, "Reopened").Scan(&project.ReopenedIssuesCount)
-	if err != nil {
-		return nil, ErrScan(err)
-	}
-	err = r.db.QueryRow(ctx, query, id, "In Progress").Scan(&project.ProgressIssuesCount)
-	if err != nil {
-		return nil, ErrScan(err)
-	}
+	query := `SELECT 
+		p.id, p.key, p.title,
+		COUNT(i.id) AS all_issues_count,
+		COUNT(i.id) FILTER (WHERE i.status = 'Opened') AS opened_issues_count,
+		COUNT(i.id) FILTER (WHERE i.status = 'Closed') AS closed_issues_count,
+		COUNT(i.id) FILTER (WHERE i.status = 'Resolved') AS resolved_issues_count,
+		COUNT(i.id) FILTER (WHERE i.status = 'Reopened') AS reopened_issues_count,
+		COUNT(i.id) FILTER (WHERE i.status = 'In Progress') AS progress_issues_count,
+		AVG(i.timespent) AS average_time,
+		COUNT(i.id) FILTER (WHERE i.createdtime >= CURRENT_DATE - INTERVAL '7 days') / 7.0 AS average_issues_count
+		FROM 
+			projects p
+		LEFT JOIN 
+			issue i ON i.projectid = p.id
+		WHERE 
+			p.id = $1
+		GROUP BY 
+			p.id, p.key, p.title`
 
 	var avgTime sql.NullFloat64
-	query = `SELECT AVG(timespent) FROM issue WHERE projectid = $1`
-	err = r.db.QueryRow(ctx, query, id).Scan(&avgTime)
+	err = r.db.QueryRow(ctx, query, id).Scan(&project.Id, &project.Key, &project.Name, &project.AllIssuesCount,
+		&project.OpenedIssuesCount, &project.ClosedIssuesCount, &project.ResolvedIssuesCount, &project.ReopenedIssuesCount,
+		&project.ProgressIssuesCount, &avgTime, &project.AverageIssuesCount)
 	if err != nil {
 		return nil, ErrScan(err)
 	}
@@ -109,18 +96,6 @@ func (r *repo) GetProject(ctx context.Context, id int) (*models.ProjectInfo, err
 		project.AverageTime = 0
 	}
 
-	query = `SELECT 
-    	COUNT(*) / 7.0 
-		FROM 
-    		issue
-		WHERE 
-		projectid = $1
-		AND
-    	createdtime >= CURRENT_DATE - INTERVAL '7 days'`
-	err = r.db.QueryRow(ctx, query, id).Scan(&project.AverageIssuesCount)
-	if err != nil {
-		return nil, ErrScan(err)
-	}
 	return &project, nil
 }
 

@@ -69,5 +69,5 @@ func main() {
 	lg.Info("Shutting down server...")
 	server.Shutdown(ctx)
 	lg.Info("Server shut down")
-	defer pg.Close(context.Background())
+	defer pg.Close()
 }
