@@ -31,7 +31,7 @@
                     <input
                             type="checkbox"
                             [checked]="selectedProjects.includes(project.id)"
-                            (change)="toggleProjectSelection(project.id)">
+                            (change)="toggleProjectSelection(project)">
                 </td>
                 <td>{{ project.name }}</td>
                 <td>{{ project.key }}</td>
@@ -100,7 +100,7 @@
         </div>
         <div *ngIf="showGraphs" class="graphs-section">
             <h2>Analytics Charts</h2>
-            <app-comparison-graphs [projectKeys]="selectedProjects"></app-comparison-graphs>
+            <app-comparison-graphs [projectKeys]="selectedProjectsForGraph"></app-comparison-graphs>
         </div>
     </div>
 </div>

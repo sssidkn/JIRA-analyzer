@@ -22,7 +22,7 @@ export class AnalyticsService {
   }
 
   makeGraphTask2(projectKey: string) {
-    return this.http.post<Task2[]>(`http://localhost:8080/api/v1/graph/make/1?project=${projectKey}`, {});
+    return this.http.post<Task2[]>(`http://localhost:8080/api/v1/graph/make/2?project=${projectKey}`, {});
   }
 
   getGraphTask2(projectKey: string) {

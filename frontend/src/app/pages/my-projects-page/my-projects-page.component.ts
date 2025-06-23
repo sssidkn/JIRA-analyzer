@@ -17,7 +17,6 @@ import { Subject, takeUntil } from 'rxjs';
     styleUrl: './my-projects-page.component.scss'
 })
 export class MyProjectsPageComponent implements OnDestroy {
-    projectService = inject(ProjectService);
     projects: Project[] = [];
     pageInfo: PageInfo = {
         pageCount: 0,
@@ -32,7 +31,11 @@ export class MyProjectsPageComponent implements OnDestroy {
 
     private destroy$ = new Subject<void>();
 
-    constructor(private viewportScroller: ViewportScroller) {}
+    constructor(private viewportScroller: ViewportScroller, private projectService: ProjectService) {}
+
+    ngOnInit(): void {
+        this.goToPage(1);
+    }
 
     ngOnDestroy(): void {
         this.destroy$.next();

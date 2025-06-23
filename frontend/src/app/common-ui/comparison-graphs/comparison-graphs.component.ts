@@ -43,10 +43,9 @@ export class ComparisonGraphsComponent implements OnInit {
   hasError = false;
 
   constructor(
-    private analyticsService: AnalyticsService,
-    private messageService: MessageService
-  ) {
-  }
+      private analyticsService: AnalyticsService,
+      private messageService: MessageService
+  ) {}
 
   ngOnInit(): void {
     if (this.projectKeys?.length > 0) {
@@ -63,37 +62,68 @@ export class ComparisonGraphsComponent implements OnInit {
   }
 
   loadGraphData(): void {
+    if (!this.projectKeys || this.projectKeys.length === 0) {
+      this.showCharts = false;
+      return;
+    }
+
     this.isLoading = true;
     this.showCharts = false;
+    this.hasError = false;
 
     const timeRequests = this.projectKeys.map(key =>
-      this.analyticsService.makeGraphTask1(key).toPromise()
+        this.analyticsService.makeGraphTask1(key).toPromise()
+            .catch(error => {
+              console.error(`Error loading time data for project ${key}:`, error);
+              return null;
+            })
     );
 
     const priorityRequests = this.projectKeys.map(key =>
-      this.analyticsService.makeGraphTask2(key).toPromise()
+        this.analyticsService.makeGraphTask2(key).toPromise()
+            .then(response => response ? [response] : null) // Обернуть в массив
+            .catch(error => {
+              console.error(`Error loading priority data for project ${key}:`, error);
+              return null;
+            })
     );
 
     Promise.all([...timeRequests, ...priorityRequests])
-      .then(results => {
-        const timeResults = results.slice(0, this.projectKeys.length) as Task1[][];
-        const priorityResults = results.slice(this.projectKeys.length) as Task2[][];
+        .then(results => {
+          const timeResults = results.slice(0, this.projectKeys.length) as Task1[][];
+          const priorityResults = results.slice(this.projectKeys.length) as Task2[][][]; // Теперь это массив массивов
 
-        this.prepareTimeChartData(timeResults);
-        this.preparePriorityChartData(priorityResults);
+          // Check if we have any valid data
+          const hasValidTimeData = timeResults.some(r => r !== null);
+          const hasValidPriorityData = priorityResults.some(r => r !== null);
 
-        this.showCharts = true;
-        this.isLoading = false;
-      })
-      .catch(error => {
-        console.error('Error loading graph data:', error);
-        this.messageService.add({
-          severity: 'error',
-          summary: 'Error',
-          detail: 'Failed to load graph data'
+          if (!hasValidTimeData && !hasValidPriorityData) {
+            throw new Error('No valid data received for any project');
+          }
+
+          if (hasValidTimeData) {
+            this.prepareTimeChartData(timeResults);
+          }
+
+          if (hasValidPriorityData) {
+            const flattenedPriorityResults = priorityResults.map(r => r ? r[0] : null);
+            this.preparePriorityChartData(flattenedPriorityResults);
+          }
+
+          this.showCharts = hasValidTimeData || hasValidPriorityData;
+        })
+        .catch(error => {
+          console.error('Error loading graph data:', error);
+          this.hasError = true;
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: 'Failed to load graph data'
+          });
+        })
+        .finally(() => {
+          this.isLoading = false;
         });
-        this.isLoading = false;
-      });
   }
 
   prepareTimeChartData(data: Task1[][]): void {
@@ -103,8 +133,19 @@ export class ComparisonGraphsComponent implements OnInit {
     ];
 
     const datasets = data.map((projectData, index) => {
+      if (!projectData) {
+        console.warn(`No time data for project ${this.projectKeys[index]}`);
+        return {
+          label: `Project ${this.projectKeys[index]}`,
+          data: timeCategories.map(() => 0),
+          backgroundColor: this.getColor(index, 0.7),
+          borderColor: this.getColor(index, 1),
+          borderWidth: 1
+        };
+      }
+
       const counts = timeCategories.map(category => {
-        const item = projectData.find(d => d.time === category);
+        const item = projectData.find(d => d?.time === category);
         return item ? item.count : 0;
       });
 
@@ -123,14 +164,26 @@ export class ComparisonGraphsComponent implements OnInit {
     };
   }
 
-  preparePriorityChartData(data: Task2[][]): void {
+  preparePriorityChartData(data: (Task2[] | null)[]): void {
     const priorityCategories = [
       'blocker', 'critical', 'major', 'minor', 'trivial'
     ];
+    console.log('Priority results:', data);
 
     const datasets = data.map((projectData, index) => {
+      if (!projectData) {
+        console.warn(`No priority data for project ${this.projectKeys[index]}`);
+        return {
+          label: `Project ${this.projectKeys[index]}`,
+          data: priorityCategories.map(() => 0),
+          backgroundColor: this.getColor(index, 0.7),
+          borderColor: this.getColor(index, 1),
+          borderWidth: 1
+        };
+      }
+
       const counts = priorityCategories.map(priority => {
-        const item = projectData.find(d => d.priority === priority);
+        const item = projectData.find(d => d?.priority === priority);
         return item ? item.count : 0;
       });
 
