@@ -56,6 +56,7 @@ func (s *GRPCServer) UpdateProject(ctx context.Context,
 
 	return &connectorApi.UpdateProjectResponse{
 		Project: &connectorApi.JiraProject{
+			Id:   project.ID,
 			Url:  project.Self,
 			Key:  project.Key,
 			Name: project.Name,

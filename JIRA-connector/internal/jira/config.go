@@ -3,6 +3,7 @@ package jira
 import (
 	"jira-connector/pkg/logger"
 	"net/http"
+	"time"
 )
 
 type Config struct {
@@ -10,7 +11,8 @@ type Config struct {
 	VersionAPI     string `yaml:"VersionAPI" env:"VERSION_API"`
 	MaxConnections int    `yaml:"MaxConnections" env:"RETRY_COUNT"`
 	MaxProcesses   int    `yaml:"MaxProcesses" env:"MAX_PROCESSES"`
-	RetryCount     int    `yaml:"RetryCount" env:"RETRY_COUNT"`
+	MaxDelay       int    `yaml:"MaxDelay" env:"MAX_DELAY"`
+	StartDelay     int    `yaml:"StartDelay" env:"START_DELAY"`
 	MaxResults     int    `yaml:"MaxResults" env:"MAX_RESULTS"`
 }
 
@@ -33,6 +35,21 @@ func WithLogger(log logger.Logger) func(*Client) {
 	}
 	return func(c *Client) {
 		c.logger = log.With(logger.Field{Key: "module", Value: "JIRA_API_Client"})
-		c.logger = log
+	}
+}
+
+func (c *Client) GetBaseURL() string {
+	return c.config.BaseURL
+}
+
+func WithStartDelay(delay int) func(client *Client) {
+	return func(c *Client) {
+		c.startDelay = time.Duration(delay) * time.Second
+	}
+}
+
+func WithMaxDelay(delay int) func(client *Client) {
+	return func(c *Client) {
+		c.maxDelay = time.Duration(delay) * time.Second
 	}
 }

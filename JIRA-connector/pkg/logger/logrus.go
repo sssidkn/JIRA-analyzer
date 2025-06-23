@@ -23,12 +23,16 @@ func NewLogrusLogger() *LogrusLogger {
 
 	log.SetOutput(os.Stdout)
 
-	fileAllLogs, err := os.OpenFile("logs.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err := os.MkdirAll("logs", 0755); err != nil {
+		log.Fatal("Can't create logs directory:", err)
+	}
+
+	fileAllLogs, err := os.OpenFile("logs/logs.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if err != nil {
 		log.Fatal("Can't open logs.log:", err)
 	}
 
-	fileErrLogs, err := os.OpenFile("err_logs.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	fileErrLogs, err := os.OpenFile("logs/err_logs.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if err != nil {
 		log.Fatal("Can't open err_logs.log:", err)
 	}

@@ -28,7 +28,6 @@ func NewProjectRepository(db *pgxpool.Pool) *ProjectRepository {
 	}
 }
 
-// TODO: Задачка со звездочкой
 func (p *ProjectRepository) GetProjectInfo(ctx context.Context, projectKey string) (*models.ProjectInfo, error) {
 	var exists bool
 	err := p.db.QueryRow(ctx,
@@ -57,19 +56,15 @@ func (p *ProjectRepository) SaveProject(ctx context.Context, project Project) er
 	}
 	defer tx.Rollback(ctx)
 
-	// 1. Сохраняем проект и получаем его ID
-	var projectID int
-	err = tx.QueryRow(ctx, `
-        INSERT INTO Projects (title, key, lastUpdate) 
-        VALUES ($1, $2, $3) 
+	_, err = tx.Exec(ctx, `
+        INSERT INTO Projects (id, title, key, lastUpdate) 
+        VALUES ($1, $2, $3, $4) 
         ON CONFLICT (key) DO UPDATE SET lastUpdate = EXCLUDED.lastUpdate
-        RETURNING id
-    `, project.Name, project.Key, project.LastUpdate).Scan(&projectID)
+    `, project.ID, project.Name, project.Key, project.LastUpdate)
 	if err != nil {
 		return fmt.Errorf("failed to save project: %w", err)
 	}
 
-	// 2. Собираем всех уникальных авторов
 	authorSet := make(map[string]struct{})
 	var statusChanges []StatusChangeData
 
@@ -84,7 +79,6 @@ func (p *ProjectRepository) SaveProject(ctx context.Context, project Project) er
 		}
 	}
 
-	// 3. Пакетное сохранение авторов
 	authorNames := make([]string, 0, len(authorSet))
 	for name := range authorSet {
 		authorNames = append(authorNames, name)
@@ -99,7 +93,6 @@ func (p *ProjectRepository) SaveProject(ctx context.Context, project Project) er
 		return fmt.Errorf("failed to batch insert authors: %w", err)
 	}
 
-	// 4. Получаем ID всех авторов
 	rows, err := tx.Query(ctx, `
         SELECT name, id FROM Author 
         WHERE name = ANY($1)
@@ -119,7 +112,6 @@ func (p *ProjectRepository) SaveProject(ctx context.Context, project Project) er
 		authorIDs[name] = id
 	}
 
-	// 5. Пакетное сохранение issues
 	issueBatch := &pgx.Batch{}
 	issueKeys := make([]string, 0, len(project.Issues))
 	issueKeyToID := make(map[string]int)
@@ -144,7 +136,7 @@ func (p *ProjectRepository) SaveProject(ctx context.Context, project Project) er
                 timeSpent = EXCLUDED.timeSpent
             RETURNING id, key
         `,
-			projectID,
+			project.ID,
 			authorIDs[issue.Fields.Creator.DisplayName],
 			authorIDs[issue.Fields.Assignee.DisplayName],
 			issue.Key,
@@ -159,7 +151,6 @@ func (p *ProjectRepository) SaveProject(ctx context.Context, project Project) er
 			issue.Fields.Timetracking.TimeSpentSeconds,
 		)
 
-		// Собираем изменения статусов
 		for _, history := range issue.Changelogs.Histories {
 			for _, item := range history.Items {
 				if item.Field == "status" {
@@ -175,7 +166,6 @@ func (p *ProjectRepository) SaveProject(ctx context.Context, project Project) er
 		}
 	}
 
-	// Выполняем пакетное сохранение issues
 	br := tx.SendBatch(ctx, issueBatch)
 	defer br.Close()
 
@@ -191,7 +181,6 @@ func (p *ProjectRepository) SaveProject(ctx context.Context, project Project) er
 		return fmt.Errorf("failed to close issue batch: %w", err)
 	}
 
-	// 6. Пакетное сохранение изменений статусов
 	if len(statusChanges) > 0 {
 		statusChangeBatch := &pgx.Batch{}
 
