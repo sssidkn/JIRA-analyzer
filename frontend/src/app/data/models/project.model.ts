@@ -26,3 +26,20 @@ export interface MyProjectsResponse {
     pageInfo: MyProjectsPageInfo;
     _links?: any;
 }
+
+export interface StatisticResponse {
+  data:
+    {
+      id: number,
+      key: string,
+      name: string,
+      allIssuesCount: number,
+      openedIssuesCount: number,
+      closedIssuesCount: number,
+      resolvedIssuesCount: number,
+      reopenedIssuesCount: number,
+      progressIssuesCount: number,
+      averageTime: number,
+      averageIssuesCount: number,
+    }
+}

@@ -1,12 +1,11 @@
 import {inject, Injectable} from '@angular/core';
 import {HttpClient} from '@angular/common/http';
-import {MyProjectsResponse, ProjectsResponse} from '../models/project.model';
+import {MyProjectsResponse, ProjectsResponse, StatisticResponse} from '../models/project.model';
 import {Observable} from 'rxjs';
 
 @Injectable({
     providedIn: 'root'
 })
-
 export class ProjectService {
     http = inject(HttpClient);
 
@@ -19,10 +18,6 @@ export class ProjectService {
         return this.http.post(`/api/v1/connector/updateProject`, {project_key: projectKey})
     };
 
-    isAnalyzed(projectKey: string) {
-        return this.http.get<boolean>(`/api/v1/isAnalyzed?project=${projectKey}`);
-    }
-
     isDownloaded(id: string) {
         return this.http.get<{ status: string }>(`http://localhost:8080/api/v1/projects/${id}`);
     }
@@ -30,4 +25,9 @@ export class ProjectService {
     getDownloadedProjects(limit: number, page: number): Observable<MyProjectsResponse> {
         return this.http.get<MyProjectsResponse>(`http://localhost:8080/api/v1/projects?limit=${limit}&page=${page}}`);
     }
+
+    getStatistic(projectKey: string): Observable<StatisticResponse> {
+      return this.http.get<StatisticResponse>(`http://localhost:8080/api/v1/projects/${projectKey}`);
+    }
+
 }

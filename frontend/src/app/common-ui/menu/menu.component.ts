@@ -22,7 +22,7 @@ export class MenuComponent {
     },
     {
       label: 'Comparison',
-      link: 'comparison',
+      link: '/comparison',
     }
   ]
 }
