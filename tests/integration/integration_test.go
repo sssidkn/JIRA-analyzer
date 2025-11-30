@@ -5,31 +5,13 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
-	"os"
-	"os/exec"
 	"strings"
 	"testing"
 	"time"
 )
 
-func TestMain(m *testing.M) {
-	cmd := exec.Command("docker-compose", "up", "--build", "-d")
-	if out, err := cmd.CombinedOutput(); err != nil {
-		panic("docker-compose up failed: " + err.Error() + "\n" + string(out))
-	}
-
-	time.Sleep(10 * time.Second)
-
-	code := m.Run()
-
-	down := exec.Command("docker-compose", "down", "--volumes")
-	_ = down.Run()
-
-	os.Exit(code)
-}
-
 func TestGetProjectsList(t *testing.T) {
-	url := "http://localhost:8080/api/v1/connector/projects?limit=30&page=1&search=A"
+	url := "http://host.docker.internal:8080/api/v1/connector/projects?limit=30&page=1&search=A"
 	resp, err := http.Get(url)
 	if err != nil {
 		t.Fatalf("failed to GET %s: %v", url, err)
@@ -86,7 +68,7 @@ func TestDownloadProject(t *testing.T) {
 
 	body := map[string]string{"project_key": projectKey}
 	bodyBytes, _ := json.Marshal(body)
-	resp, err := http.Post("http://localhost:8080/api/v1/connector/updateProject", "application/json", bytes.NewReader(bodyBytes))
+	resp, err := http.Post("http://host.docker.internal:8080/api/v1/connector/updateProject", "application/json", bytes.NewReader(bodyBytes))
 	if err != nil {
 		t.Fatalf("failed to POST updateProject: %v", err)
 	}
@@ -101,7 +83,7 @@ func TestDownloadProject(t *testing.T) {
 	for i := 0; i < 20; i++ { // ждём до 10 секунд
 		time.Sleep(500 * time.Millisecond)
 
-		getResp, err := http.Get("http://localhost:8080/api/v1/projects")
+		getResp, err := http.Get("http://host.docker.internal:8080/api/v1/projects")
 		if err != nil {
 			continue
 		}

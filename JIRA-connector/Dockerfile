@@ -4,6 +4,9 @@ WORKDIR /app
 COPY . .
 
 RUN go mod download
+
+RUN go test -v ./...
+
 RUN CGO_ENABLED=0 GOOS=linux go build -o /connector-service ./cmd/service/main.go
 
 FROM alpine:latest
