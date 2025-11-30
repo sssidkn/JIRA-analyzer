@@ -17,10 +17,6 @@ export class MenuComponent {
       link: '',
     },
     {
-      label: 'My Projects',
-      link: '/my_projects',
-    },
-    {
       label: 'Comparison',
       link: '/comparison',
     }
