@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	connector "jira-connector/internal/service"
-	connectorApi "jira-connector/pkg/api/connector"
-	"jira-connector/pkg/logger"
+	connector "github.com/sssidkn/jira-connector/internal/service"
+	connectorApi "github.com/sssidkn/jira-connector/pkg/api/connector"
+	"github.com/sssidkn/jira-connector/pkg/logger"
 	"net/http"
 	"sync"
 

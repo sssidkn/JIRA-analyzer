@@ -3,17 +3,18 @@ package main
 import (
 	"context"
 	"fmt"
-	"jira-connector/internal/config"
-	"jira-connector/internal/jira"
-	"jira-connector/internal/repository"
-	connector "jira-connector/internal/service"
-	grpcSrv "jira-connector/internal/transport/grpc/server"
-	httpSrv "jira-connector/internal/transport/http/server"
-	"jira-connector/pkg/db/postgres"
-	"jira-connector/pkg/logger"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/sssidkn/jira-connector/internal/config"
+	"github.com/sssidkn/jira-connector/internal/jira"
+	"github.com/sssidkn/jira-connector/internal/repository"
+	connector "github.com/sssidkn/jira-connector/internal/service"
+	grpcSrv "github.com/sssidkn/jira-connector/internal/transport/grpc/server"
+	httpSrv "github.com/sssidkn/jira-connector/internal/transport/http/server"
+	"github.com/sssidkn/jira-connector/pkg/db/postgres"
+	"github.com/sssidkn/jira-connector/pkg/logger"
 )
 
 func main() {

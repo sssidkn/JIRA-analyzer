@@ -3,8 +3,8 @@ package repository
 import (
 	"context"
 	"fmt"
-	"jira-connector/internal/models"
-	"jira-connector/pkg/logger"
+	"github.com/sssidkn/jira-connector/internal/models"
+	"github.com/sssidkn/jira-connector/pkg/logger"
 	"time"
 
 	"github.com/jackc/pgx/v5"

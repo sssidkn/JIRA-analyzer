@@ -9,9 +9,9 @@ import (
 	"testing"
 	"time"
 
-	"jira-connector/internal/jira"
-	"jira-connector/internal/models"
-	"jira-connector/pkg/logger"
+	"github.com/sssidkn/jira-connector/internal/jira"
+	"github.com/sssidkn/jira-connector/internal/models"
+	"github.com/sssidkn/jira-connector/pkg/logger"
 )
 
 func MockServer() *httptest.Server {
@@ -47,6 +47,72 @@ func MockServer() *httptest.Server {
 			}
 			data, _ := json.Marshal(projects)
 			w.Write(data)
+		case "/rest/api/2/project/TEST":
+			project := models.JiraProject{
+				ID:   "10000",
+				Key:  "TEST",
+				Name: "Test Project",
+			}
+			json.NewEncoder(w).Encode(project)
+
+		case "/rest/api/2/search":
+			// Обработка параметров запроса
+			jql := r.URL.Query().Get("jql")
+			maxResults := r.URL.Query().Get("maxResults")
+			startAt := r.URL.Query().Get("startAt")
+
+			// Для теста общего количества issues
+			if maxResults == "0" {
+				if jql == "project=TEST" {
+					json.NewEncoder(w).Encode(map[string]interface{}{
+						"total": 150,
+					})
+				} else if jql == "project=TEST AND updated > \"2023/01/01\"" {
+					json.NewEncoder(w).Encode(map[string]interface{}{
+						"total": 25,
+					})
+				}
+				return
+			}
+
+			// Для теста получения issues с пагинацией
+			var issues []models.JiraIssue
+			pageSize := 50
+			if maxResults != "" {
+				fmt.Sscanf(maxResults, "%d", &pageSize)
+			}
+
+			start := 0
+			if startAt != "" {
+				fmt.Sscanf(startAt, "%d", &start)
+			}
+
+			for i := start; i < start+pageSize && i < 150; i++ {
+				issues = append(issues, models.JiraIssue{
+					ID:  fmt.Sprintf("%d", i),
+					Key: fmt.Sprintf("TEST-%d", i),
+					Fields: models.Fields{
+						Summary: fmt.Sprintf("Test Issue %d", i),
+						Creator: models.JiraUser{
+							DisplayName: "Test User",
+						},
+					},
+				})
+			}
+
+			response := map[string]interface{}{
+				"issues": issues,
+				"total":  150,
+			}
+			json.NewEncoder(w).Encode(response)
+
+		case "/rest/api/2/project":
+			projects := []models.ProjectInfo{
+				{ID: "10000", Key: "TEST", Name: "Test Project"},
+				{ID: "10001", Key: "PROJ", Name: "Another Project"},
+			}
+			json.NewEncoder(w).Encode(projects)
+
 		default:
 			w.WriteHeader(http.StatusNotFound)
 		}
@@ -61,16 +127,14 @@ func BenchmarkGetProject_OneConnectionPerGoroutine(b *testing.B) {
 		BaseURL:        server.URL,
 		MaxConnections: 100,
 		MaxProcesses:   100,
-		RetryCount:     3,
 		MaxResults:     100,
 	}
 
-	client := jira.NewClient(cfg)
-	client.SetLogger(logger.NewTestLogger())
+	client := jira.NewClient(jira.WithConfig(cfg), jira.WithLogger(logger.NewTestLogger()))
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_, err := client.UpdateProject(context.Background(), "TEST")
+		_, err := client.UpdateProject(context.Background(), "TEST", time.Time{})
 		if err != nil {
 			b.Fatalf("UpdateProject failed: %v", err)
 		}
@@ -85,16 +149,14 @@ func BenchmarkGetProject_SingleSharedConnection(b *testing.B) {
 		BaseURL:        server.URL,
 		MaxConnections: 1,
 		MaxProcesses:   100,
-		RetryCount:     3,
 		MaxResults:     100,
 	}
 
-	client := jira.NewClient(cfg)
-	client.SetLogger(logger.NewTestLogger())
+	client := jira.NewClient(jira.WithConfig(cfg), jira.WithLogger(logger.NewTestLogger()))
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_, err := client.UpdateProject(context.Background(), "TEST")
+		_, err := client.UpdateProject(context.Background(), "TEST", time.Time{})
 		if err != nil {
 			b.Fatalf("UpdateProject failed: %v", err)
 		}
@@ -109,16 +171,14 @@ func BenchmarkGetProject_PooledConnections(b *testing.B) {
 		BaseURL:        server.URL,
 		MaxConnections: 3,
 		MaxProcesses:   100,
-		RetryCount:     3,
 		MaxResults:     100,
 	}
 
-	client := jira.NewClient(cfg)
-	client.SetLogger(logger.NewTestLogger())
+	client := jira.NewClient(jira.WithConfig(cfg), jira.WithLogger(logger.NewTestLogger()))
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_, err := client.UpdateProject(context.Background(), "TEST")
+		_, err := client.UpdateProject(context.Background(), "TEST", time.Time{})
 		if err != nil {
 			b.Fatalf("UpdateProject failed: %v", err)
 		}
@@ -133,8 +193,7 @@ func BenchmarkGetProjects(b *testing.B) {
 		BaseURL: server.URL,
 	}
 
-	client := jira.NewClient(cfg)
-	client.SetLogger(logger.NewTestLogger())
+	client := jira.NewClient(jira.WithConfig(cfg), jira.WithLogger(logger.NewTestLogger()))
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {

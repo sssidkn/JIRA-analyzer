@@ -8,7 +8,7 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/sssidkn/JIRA-analyzer/internal/repository"
+	"github.com/sssidkn/resources/internal/repository"
 )
 
 // getProjects godoc

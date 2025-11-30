@@ -5,7 +5,7 @@ import (
 	"database/sql"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/sssidkn/JIRA-analyzer/internal/models"
+	"github.com/sssidkn/resources/internal/models"
 )
 
 type Repository interface {

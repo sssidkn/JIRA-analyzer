@@ -6,19 +6,8 @@ import (
 	"errors"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/sssidkn/JIRA-analyzer/internal/dto"
+	"github.com/sssidkn/analytics/internal/dto"
 )
-
-type Repository interface {
-	MakeTaskOne(ctx context.Context, key string) (*[]dto.IssueTaskOne, error)
-	MakeTaskTwo(ctx context.Context, key string) (*[]dto.IssueTaskTwo, error)
-	GetTaskOne(ctx context.Context, key string) (*[]dto.IssueTaskOne, error)
-	GetTaskTwo(ctx context.Context, key string) (*[]dto.IssueTaskTwo, error)
-	DeleteTasks(ctx context.Context, key string) (bool, error)
-	IsAnalyzed(ctx context.Context, key string) (bool, error)
-	CompareTaskOne(ctx context.Context, keys *[]string) (*[]dto.ComparisonTaskOne, error)
-	CompareTaskTwo(ctx context.Context, keys *[]string) (*[]dto.ComparisonTaskTwo, error)
-}
 
 type repo struct {
 	db *pgxpool.Pool

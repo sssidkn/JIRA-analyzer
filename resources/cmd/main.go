@@ -8,13 +8,13 @@ import (
 	"strconv"
 	"syscall"
 
-	_ "github.com/sssidkn/JIRA-analyzer/docs"
-	"github.com/sssidkn/JIRA-analyzer/internal/config"
-	"github.com/sssidkn/JIRA-analyzer/internal/repository"
-	"github.com/sssidkn/JIRA-analyzer/internal/server"
-	"github.com/sssidkn/JIRA-analyzer/internal/service"
-	"github.com/sssidkn/JIRA-analyzer/pkg/logger"
-	"github.com/sssidkn/JIRA-analyzer/pkg/postgres"
+	_ "github.com/sssidkn/resources/docs"
+	"github.com/sssidkn/resources/internal/config"
+	"github.com/sssidkn/resources/internal/repository"
+	"github.com/sssidkn/resources/internal/server"
+	"github.com/sssidkn/resources/internal/service"
+	"github.com/sssidkn/resources/pkg/logger"
+	"github.com/sssidkn/resources/pkg/postgres"
 )
 
 // @title Resources Swagger API

@@ -1,8 +1,8 @@
 package jira
 
 import (
-	"jira-connector/pkg/logger"
-	"jira-connector/pkg/ratelimiter"
+	"github.com/sssidkn/jira-connector/pkg/logger"
+	"github.com/sssidkn/jira-connector/pkg/ratelimiter"
 	"net/http"
 	"time"
 )

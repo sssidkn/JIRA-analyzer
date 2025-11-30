@@ -3,9 +3,9 @@ package connector
 import (
 	"context"
 	"fmt"
-	"jira-connector/internal/models"
-	connectorApi "jira-connector/pkg/api/connector"
-	"jira-connector/pkg/logger"
+	"github.com/sssidkn/jira-connector/internal/models"
+	connectorApi "github.com/sssidkn/jira-connector/pkg/api/connector"
+	"github.com/sssidkn/jira-connector/pkg/logger"
 	"strings"
 	"time"
 )

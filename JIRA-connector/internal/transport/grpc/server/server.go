@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	connector "jira-connector/internal/service"
-	connectorApi "jira-connector/pkg/api/connector"
-	"jira-connector/pkg/logger"
+	"github.com/sssidkn/jira-connector/internal/models"
+	connectorApi "github.com/sssidkn/jira-connector/pkg/api/connector"
+	"github.com/sssidkn/jira-connector/pkg/logger"
 	"net"
 	"sync"
 
@@ -15,10 +15,15 @@ import (
 
 type Option func(*GRPCServer)
 
+type Service interface {
+	UpdateProject(ctx context.Context, projectKey string) (*models.JiraProject, error)
+	GetProjects(ctx context.Context, limit, page int, search string) (*connectorApi.GetProjectsResponse, error)
+}
+
 type GRPCServer struct {
 	connectorApi.UnimplementedJiraConnectorServer
 	server  *grpc.Server
-	service *connector.JiraConnector
+	service Service
 	wg      *sync.WaitGroup
 	logger  *logger.Logger
 }
@@ -32,7 +37,7 @@ func NewGRPCServer(options ...Option) *GRPCServer {
 	return srv
 }
 
-func WithService(service *connector.JiraConnector) Option {
+func WithService(service Service) Option {
 	return func(s *GRPCServer) {
 		s.service = service
 	}

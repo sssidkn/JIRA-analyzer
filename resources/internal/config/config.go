@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/ilyakaznacheev/cleanenv"
-	"github.com/sssidkn/JIRA-analyzer/pkg/postgres"
+	"github.com/sssidkn/resources/pkg/postgres"
 )
 
 type Config struct {

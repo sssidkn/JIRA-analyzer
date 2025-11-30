@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/sssidkn/JIRA-analyzer/internal/models"
-	"github.com/sssidkn/JIRA-analyzer/internal/repository"
-	"github.com/sssidkn/JIRA-analyzer/pkg/logger"
+	"github.com/sssidkn/resources/internal/models"
+	"github.com/sssidkn/resources/internal/repository"
+	"github.com/sssidkn/resources/pkg/logger"
 )
 
 type Service interface {

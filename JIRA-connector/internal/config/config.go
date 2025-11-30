@@ -2,9 +2,9 @@ package config
 
 import (
 	"fmt"
-	"jira-connector/internal/jira"
-	"jira-connector/pkg/db/postgres"
-	"jira-connector/pkg/logger"
+	"github.com/sssidkn/jira-connector/internal/jira"
+	"github.com/sssidkn/jira-connector/pkg/db/postgres"
+	"github.com/sssidkn/jira-connector/pkg/logger"
 	"os"
 
 	"github.com/ilyakaznacheev/cleanenv"

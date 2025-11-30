@@ -1,4 +1,4 @@
-module github.com/sssidkn/JIRA-analyzer
+module github.com/sssidkn/resources
 
 go 1.23.3
 

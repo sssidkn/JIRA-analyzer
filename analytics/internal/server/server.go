@@ -9,15 +9,21 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/sssidkn/JIRA-analyzer/internal/service"
-	"github.com/sssidkn/JIRA-analyzer/pkg/logger"
+	"github.com/sssidkn/analytics/pkg/logger"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
+type Service interface {
+	MakeTask(ctx context.Context, task int, key string) (interface{}, error)
+	GetTask(ctx context.Context, task int, key string) (interface{}, error)
+	DeleteTasks(ctx context.Context, key string) (bool, error)
+	IsAnalyzed(ctx context.Context, key string) (bool, error)
+	Compare(ctx context.Context, task int, keys string) (interface{}, error)
+}
 type Server struct {
 	engine     *gin.Engine
-	service    service.Service
+	service    Service
 	httpServer *http.Server
 }
 
@@ -37,7 +43,7 @@ type Server struct {
 // @BasePath /api
 // @schemes http
 
-func New(service service.Service, l *logger.Logger, timeout time.Duration) *Server {
+func New(service Service, l *logger.Logger, timeout time.Duration) *Server {
 	e := gin.New()
 	e.Use(gin.Recovery())
 	e.Use(timeoutMiddleware(timeout))

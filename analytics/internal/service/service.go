@@ -6,27 +6,30 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/sssidkn/JIRA-analyzer/internal/repository"
-	"github.com/sssidkn/JIRA-analyzer/pkg/api/connectorApi"
-	"github.com/sssidkn/JIRA-analyzer/pkg/logger"
+	"github.com/sssidkn/analytics/internal/dto"
+	"github.com/sssidkn/analytics/internal/repository"
+	"github.com/sssidkn/analytics/pkg/api/connectorApi"
+	"github.com/sssidkn/analytics/pkg/logger"
 )
 
-type Service interface {
-	MakeTask(ctx context.Context, task int, key string) (interface{}, error)
-	GetTask(ctx context.Context, task int, key string) (interface{}, error)
+type Repository interface {
+	MakeTaskOne(ctx context.Context, key string) (*[]dto.IssueTaskOne, error)
+	MakeTaskTwo(ctx context.Context, key string) (*[]dto.IssueTaskTwo, error)
+	GetTaskOne(ctx context.Context, key string) (*[]dto.IssueTaskOne, error)
+	GetTaskTwo(ctx context.Context, key string) (*[]dto.IssueTaskTwo, error)
 	DeleteTasks(ctx context.Context, key string) (bool, error)
 	IsAnalyzed(ctx context.Context, key string) (bool, error)
-	Compare(ctx context.Context, task int, keys string) (interface{}, error)
+	CompareTaskOne(ctx context.Context, keys *[]string) (*[]dto.ComparisonTaskOne, error)
+	CompareTaskTwo(ctx context.Context, keys *[]string) (*[]dto.ComparisonTaskTwo, error)
 }
-
 type service struct {
-	repo     repository.Repository
+	repo     Repository
 	log      logger.Logger
 	handlers map[int]TaskHandler
 	client   connectorApi.JiraConnectorClient
 }
 
-func New(repo repository.Repository, log logger.Logger, client connectorApi.JiraConnectorClient) *service {
+func New(repo Repository, log logger.Logger, client connectorApi.JiraConnectorClient) *service {
 	s := &service{repo: repo, log: log, handlers: make(map[int]TaskHandler), client: client}
 	s.handlers[1] = s.makeTaskOne // time in the open state
 	s.handlers[2] = s.makeTaskTwo //number of tasks by priority level

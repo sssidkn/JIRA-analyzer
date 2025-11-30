@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/sssidkn/JIRA-analyzer/internal/service"
-	"github.com/sssidkn/JIRA-analyzer/pkg/logger"
+	"github.com/sssidkn/resources/internal/service"
+	"github.com/sssidkn/resources/pkg/logger"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
