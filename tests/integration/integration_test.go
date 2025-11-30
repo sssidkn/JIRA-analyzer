@@ -18,7 +18,6 @@ func TestMain(m *testing.M) {
 		panic("docker-compose up failed: " + err.Error() + "\n" + string(out))
 	}
 
-	// Ждём готовности сервиса (лучше через waitForService, но пока Sleep)
 	time.Sleep(10 * time.Second)
 
 	code := m.Run()
