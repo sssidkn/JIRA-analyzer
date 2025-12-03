@@ -148,8 +148,7 @@ Web доступен по http://localhost:80 . API всех сервисов д
       "Id": 0,
       "Key": "",
       "Name": ""
-    },
-    ...
+    }
   ]
 }
 ```
@@ -306,9 +305,8 @@ Web доступен по http://localhost:80 . API всех сервисов д
 [
   {
     "count": 0,
-    "time"/"prioroty": ""
-  },
-  ...
+    "time": "" 
+  }
 ]
 ```
 
@@ -325,9 +323,8 @@ Web доступен по http://localhost:80 . API всех сервисов д
 [
   {
     "count": 93,
-    "time"/"prioroty": ""
-  },
-  ...
+    "time": ""
+  }
 ]
 ```
 
@@ -369,12 +366,10 @@ true
     "data": [
       {
         "count": 93,
-        "time"/"prioroty": ""
-      },
-      ...
+        "time": ""
+      }
     ]
-  },
-  ...
+  }
 ]
 ```
 
